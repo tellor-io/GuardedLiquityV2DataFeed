@@ -32,11 +32,11 @@ contract GuardedTellorChainlinkAdapter is AggregatorV3Interface {
 
     /**
      * @dev returns the latest round data in Chainlink format using Tellor oracle data
-     * @return roundId always returns 1 for compatibility (Tellor doesn't use round concept)
+     * @return roundId always returns 1
      * @return answer the latest oracle value converted to int256
-     * @return startedAt always returns 0 for compatibility (not used by Tellor)
-     * @return updatedAt the timestamp when the data was last updated
-     * @return answeredInRound always returns 0 for compatibility (not used by Tellor)
+     * @return startedAt always returns 0
+     * @return updatedAt the timestamp when the data was last updated (in seconds)
+     * @return answeredInRound always returns 0
      */
     function latestRoundData()
         external
@@ -54,9 +54,13 @@ contract GuardedTellorChainlinkAdapter is AggregatorV3Interface {
             IGuardedTellorDataBank.AggregateData memory _data,
             uint256 _aggregateTimestamp
         ) {
+            if (_data.value.length == 0 || _aggregateTimestamp == 0) {
+                return (0, 0, 0, 0, 0);
+            }
             // decode the oracle value from bytes to uint256, then convert to int256
             uint256 _valueUint = abi.decode(_data.value, (uint256));
-            return (1, int256(_valueUint), 0, _aggregateTimestamp, 0);
+            // convert aggregateTimestamp to seconds
+            return (1, int256(_valueUint), 0, _aggregateTimestamp / 1000, 0);
         } catch {
             // return zero values if data retrieval fails (e.g., when paused or no data available)
             return (0, 0, 0, 0, 0);
