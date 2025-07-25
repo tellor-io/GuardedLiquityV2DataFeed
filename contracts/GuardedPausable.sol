@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 /**
  @author Tellor Inc.
- @title GuardedTellorCaller
+ @title GuardedPausable
  @dev This contract acts as a pausable parent contract. It allows
  * designated guardians to pause the contract in case of emergencies
  * or attacks. The contract maintains a list of guardian addresses who can
