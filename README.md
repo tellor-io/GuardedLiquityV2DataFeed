@@ -1,19 +1,17 @@
 # GuardedTellorChainlinkAdapter
 
-GuardedTellorChainlinkAdapter is an adapter contract which adds a _pause_ functionality for tellor oracle users. User contracts can read tellor data through this guarded contract, but when this contract is paused, oracle reads revert. This contract gets deployed with two arguments: [the tellor oracle address](https://docs.tellor.io/tellor/the-basics/contracts-reference), and the first _guardian_ address. Any guardian can pause and unpause the contract at any time. Also, a guardian can add or remove other guardians. Under normal operations, this contract uses the evm `call` method (via a fallback function) to pass contract calls to the tellor oracle, and then passes any returned data to the caller.
+GuardedTellorChainlinkAdapter provides Chainlink-compatible oracle data from Tellor with guardian pause functionality. This repository contains three main contracts:
 
-This contract does not directly affect the tellor oracle contract.
-## Contract
+- **GuardedTellorDataBank**: Stores and validates Tellor oracle data with guardian pause controls
+- **GuardedTellorChainlinkAdapter**: Implements Chainlink's AggregatorV3Interface to serve Tellor data in Chainlink format
+- **GuardedPausable**: Base contract providing guardian management and pause functionality
 
-
-
-
-
+The adapter allows existing Chainlink-based applications to easily migrate to Tellor oracle data while maintaining the same interface. Guardians can pause the system when needed, causing oracle reads to return zero values for safety.
 
 ## Install
 ```shell
-git clone https://github.com/tellor-io/GuardedTellorCaller.git
-cd GuardedTellorCaller
+git clone https://github.com/tellor-io/GuardedTellorChainlinkAdapter.git
+cd GuardedTellorChainlinkAdapter
 npm i
 ```
 
@@ -31,12 +29,35 @@ Setup config variables for `INFURA_API_KEY`, `PK`, and `ETHERSCAN_API_KEY`:
 npx hardhat vars set INFURA_API_KEY
 ```
 
-### Set Constructor Variables
-Set `TELLOR_ADDRESS` and `GUARDIAN_ADDRESS` in `ignition/modules/GuardedTellorCaller.js`:
+### Deploy GuardedTellorDataBank
+
+Set constructor variables in `ignition/modules/GuardedTellorDataBank.js`:
 
 ```javascript
-const TELLOR_ADDRESS = "0x0000000000000000000000000000000000000000";
+const DATA_BRIDGE_ADDRESS = "0x0000000000000000000000000000000000000000";
 const GUARDIAN_ADDRESS = "0x0000000000000000000000000000000000000000";
+```
+
+Deploy:
+
+```shell
+npx hardhat ignition deploy ignition/modules/GuardedTellorDataBank.js --network sepolia --deployment-id sepolia-databank
+```
+
+### Deploy GuardedTellorChainlinkAdapter
+
+Set constructor variables in `ignition/modules/GuardedTellorChainlinkAdapter.js`:
+
+```javascript
+const TELLOR_DATA_BANK_ADDRESS = "0x0000000000000000000000000000000000000000";
+const QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000000";
+const DECIMALS = 18;
+```
+
+Deploy:
+
+```shell
+npx hardhat ignition deploy ignition/modules/GuardedTellorChainlinkAdapter.js --network sepolia --deployment-id sepolia-adapter
 ```
 
 ### Setup Your EVM Network
@@ -52,16 +73,10 @@ networks: {
   },
 ```
 
-### Deploy
-Deploy the contract:
-
-```shell
-npx hardhat ignition deploy ignition/modules/GuardedTellorCaller.js --network sepolia --deployment-id sepolia-deployment
-```
-
 ### Verify
-Verify the contract:
+Verify the contracts:
 
 ```shell
-npx hardhat ignition verify sepolia-deployment
+npx hardhat ignition verify sepolia-databank
+npx hardhat ignition verify sepolia-adapter
 ```
