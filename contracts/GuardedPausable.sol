@@ -4,11 +4,11 @@ pragma solidity 0.8.19;
 /**
  @author Tellor Inc.
  @title GuardedTellorCaller
- @dev This contract acts as a pausable proxy for Tellor oracle calls. It allows
- * designated guardians to pause oracle data retrieval in case of emergencies
+ @dev This contract acts as a pausable parent contract. It allows
+ * designated guardians to pause the contract in case of emergencies
  * or attacks. The contract maintains a list of guardian addresses who can
- * collectively manage the pause state and guardian membership. All oracle
- * calls are proxied through the fallback function when not paused.
+ * collectively manage the pause state and guardian membership. Child contracts
+ * should add the _onlyUnpaused() function to any functions they wish to be pausable.
 */
 contract GuardedPausable {
     // Storage
@@ -37,8 +37,8 @@ contract GuardedPausable {
      * @param _newGuardian address of the new guardian to add
      */
     function addGuardian(address _newGuardian) public {
-        require(guardians[msg.sender], "Not a guardian");
-        require(!guardians[_newGuardian], "Guardian already exists");
+        require(guardians[msg.sender], "GuardedPausable: Not a guardian");
+        require(!guardians[_newGuardian], "GuardedPausable: Guardian already exists");
         guardians[_newGuardian] = true;
         guardianCount++;
         emit GuardianAdded(_newGuardian);
@@ -49,9 +49,9 @@ contract GuardedPausable {
      * @param _guardian address of the guardian to remove
      */
     function removeGuardian(address _guardian) public {
-        require(guardians[msg.sender], "Not a guardian");
-        require(guardians[_guardian], "Guardian does not exist");
-        require(guardianCount > 1, "Cannot remove last guardian");
+        require(guardians[msg.sender], "GuardedPausable: Not a guardian");
+        require(guardians[_guardian], "GuardedPausable: Guardian does not exist");
+        require(guardianCount > 1, "GuardedPausable: Cannot remove last guardian");
         guardians[_guardian] = false;
         guardianCount--;
         emit GuardianRemoved(_guardian);
@@ -61,8 +61,8 @@ contract GuardedPausable {
      * @dev Allows a guardian to pause the contract, preventing oracle calls
      */
     function pause() public {
-        require(guardians[msg.sender], "Not a guardian");
-        require(!paused, "Already paused");
+        require(guardians[msg.sender], "GuardedPausable: Not a guardian");
+        require(!paused, "GuardedPausable: Already paused");
         paused = true;
         emit Paused();
     }
@@ -71,13 +71,13 @@ contract GuardedPausable {
      * @dev Allows a guardian to unpause the contract, resuming oracle calls
      */
     function unpause() public {
-        require(guardians[msg.sender], "Not a guardian");
-        require(paused, "Already unpaused");
+        require(guardians[msg.sender], "GuardedPausable: Not a guardian");
+        require(paused, "GuardedPausable: Already unpaused");
         paused = false;
         emit Unpaused();
     }
 
     function _onlyUnpaused() internal view {
-        require(!paused, "Tellor is paused");
+        require(!paused, "GuardedPausable: Tellor is paused");
     }
 }
