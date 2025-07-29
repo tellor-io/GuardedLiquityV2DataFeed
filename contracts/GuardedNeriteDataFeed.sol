@@ -68,7 +68,7 @@ contract GuardedNeriteDataFeed is GuardedPausable, NeriteAggregatorV3Interface {
         );
         int256 _price = int256(abi.decode(_attestData.report.value, (uint256)));
         data.push(AggregateData(
-            int256(_price), 
+            _price, 
             _attestData.report.aggregatePower, 
             _attestData.report.timestamp,
             _attestData.attestationTimestamp, 
@@ -96,11 +96,11 @@ contract GuardedNeriteDataFeed is GuardedPausable, NeriteAggregatorV3Interface {
 
     /**
      * @dev returns the latest round data in Chainlink format using Tellor oracle data
-     * @return roundId always returns 1
+     * @return roundId always returns 1 (not used)
      * @return answer the latest oracle value converted to int256
-     * @return startedAt always returns 0
+     * @return startedAt always returns 0 (not used)
      * @return updatedAt the timestamp when the data was last updated (in seconds)
-     * @return answeredInRound always returns 0
+     * @return answeredInRound always returns 0 (not used)
      */
     function latestRoundData()
         external

@@ -173,7 +173,7 @@ describe("GuardedNeriteDataFeed", function () {
       });
 
       it("Should be able to remove admin", async function () {
-        const { guardedDataFeed, admin } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { guardedDataFeed, admin, guardian2 } = await loadFixture(deployGuardedNeriteDataFeedFixture);
         expect(await guardedDataFeed.admin()).to.equal(admin.address);
         expect(await guardedDataFeed.guardians(admin)).to.equal(true);
         expect(await guardedDataFeed.guardianCount()).to.equal(1);
@@ -182,6 +182,9 @@ describe("GuardedNeriteDataFeed", function () {
         expect(await guardedDataFeed.admin()).to.equal("0x0000000000000000000000000000000000000000");
         expect(await guardedDataFeed.guardians(admin)).to.equal(false);
         expect(await guardedDataFeed.guardianCount()).to.equal(0);
+        // old admin can't add guardian2 now
+        await expect(guardedDataFeed.connect(admin).addGuardian(guardian2.address))
+          .to.be.revertedWith("GuardedPausable: Not an admin");
       });
     });
   });

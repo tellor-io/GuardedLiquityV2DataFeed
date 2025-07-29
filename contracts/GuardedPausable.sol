@@ -37,7 +37,7 @@ contract GuardedPausable {
     }
 
     /**
-     * @dev Allows an existing guardian to add a new guardian
+     * @dev Allows admin to add a new guardian
      * @param _newGuardian address of the new guardian to add
      */
     function addGuardian(address _newGuardian) public {
@@ -49,7 +49,7 @@ contract GuardedPausable {
     }
 
     /**
-     * @dev Allows an existing guardian to remove another guardian
+     * @dev Allows admin to remove a guardian
      * @param _guardian address of the guardian to remove
      */
     function removeGuardian(address _guardian) public {
