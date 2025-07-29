@@ -15,21 +15,24 @@ contract GuardedPausable {
     mapping(address => bool) public guardians; // mapping of guardian addresses to their status
     bool public paused; // whether the contract is currently paused
     uint256 public guardianCount; // total number of active guardians
+    address public admin; // address of the admin who can add/remove guardians
 
     // Events
     event GuardianAdded(address indexed guardian);
     event GuardianRemoved(address indexed guardian);
+    event AdminRemoved();
     event Paused();
     event Unpaused();
 
     // Functions
     /**
      * @dev Initializes the GuardedPausable with a first guardian
-     * @param _firstGuardian address of the initial guardian who can pause/unpause the contract
+     * @param _admin address of the initial guardian who can pause/unpause the contract
      */
-    constructor(address _firstGuardian) {
-        guardians[_firstGuardian] = true;
+    constructor(address _admin) {
+        guardians[_admin] = true;
         guardianCount++;
+        admin = _admin;
     }
 
     /**
@@ -37,7 +40,7 @@ contract GuardedPausable {
      * @param _newGuardian address of the new guardian to add
      */
     function addGuardian(address _newGuardian) public {
-        require(guardians[msg.sender], "GuardedPausable: Not a guardian");
+        require(msg.sender == admin, "GuardedPausable: Not an admin");
         require(!guardians[_newGuardian], "GuardedPausable: Guardian already exists");
         guardians[_newGuardian] = true;
         guardianCount++;
@@ -49,11 +52,14 @@ contract GuardedPausable {
      * @param _guardian address of the guardian to remove
      */
     function removeGuardian(address _guardian) public {
-        require(guardians[msg.sender], "GuardedPausable: Not a guardian");
+        require(msg.sender == admin, "GuardedPausable: Not an admin");
         require(guardians[_guardian], "GuardedPausable: Guardian does not exist");
-        require(guardianCount > 1, "GuardedPausable: Cannot remove last guardian");
         guardians[_guardian] = false;
         guardianCount--;
+        if (_guardian == admin) {
+            admin = address(0);
+            emit AdminRemoved();
+        }
         emit GuardianRemoved(_guardian);
     }
 
@@ -77,6 +83,9 @@ contract GuardedPausable {
         emit Unpaused();
     }
 
+    /**
+     * @dev Reverts if the contract is paused
+     */
     function _onlyUnpaused() internal view {
         require(!paused, "GuardedPausable: Tellor is paused");
     }
