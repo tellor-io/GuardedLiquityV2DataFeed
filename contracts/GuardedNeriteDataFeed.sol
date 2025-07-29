@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import "usingtellorlayer/contracts/interfaces/ITellorDataBridge.sol";
 import { GuardedPausable } from "./GuardedPausable.sol";
+import { NeriteAggregatorV3Interface } from "./interfaces/NeriteAggregatorV3Interface.sol";
 
 /**
  @author Tellor Inc.
@@ -10,7 +11,7 @@ import { GuardedPausable } from "./GuardedPausable.sol";
  @dev this contract is used to store data for a single price feed. It is guarded by a GuardedPausable contract, which can pause 
  * the data feed and add/remove guardians. Pausing only affects the latestRoundData function.
 */
-contract GuardedNeriteDataFeed is GuardedPausable {
+contract GuardedNeriteDataFeed is GuardedPausable, NeriteAggregatorV3Interface {
 
     // Storage
     /**
@@ -38,11 +39,12 @@ contract GuardedNeriteDataFeed is GuardedPausable {
 
     // Functions
     /**
-     * @dev initializes the GuardedNeriteDataFeed with a data bridge and first guardian
+     * @dev initializes the GuardedNeriteDataFeed with a data bridge, query ID, and admin
      * @param _dataBridge address of the Tellor data bridge contract
-     * @param _firstGuardian address of the initial guardian who can pause/unpause the contract
+     * @param _queryId the query ID to retrieve current data for
+     * @param _admin address of the admin who can pause/unpause the contract
      */
-    constructor(address _dataBridge, bytes32 _queryId, address _firstGuardian) GuardedPausable(_firstGuardian) {
+    constructor(address _dataBridge, bytes32 _queryId, address _admin) GuardedPausable(_admin) {
         dataBridge = ITellorDataBridge(_dataBridge);
         queryId = _queryId;
     }
