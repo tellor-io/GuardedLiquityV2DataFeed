@@ -881,47 +881,6 @@ describe("GuardedNeriteDataFeed", function () {
         expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(true);
       });
 
-      it("Should fetch multiple prices", async function () {
-        await this.mockMainnetPriceFeed.fetchPriceMock();
-        expect(await this.mockMainnetPriceFeed.lastGoodPrice()).to.equal(this.testValue);
-        expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(false);
-
-        // relay more data to data feed
-        await time.increase(3600);
-        const mockPrice2 = h.toWei("2100");
-        const mockValue2 = abiCoder.encode(["uint256"], [mockPrice2]);
-        const { attestData: attestData2, currentValidatorSet: currentValidatorSet2, sigs: sigs2 } = await h.prepareOracleData(
-          ETH_USD_QUERY_ID,
-          mockValue2,
-          this.validators,
-          this.powers,
-          this.valCheckpoint
-        );
-
-        await this.guardedDataFeed.updateOracleData(attestData2, currentValidatorSet2, sigs2);
-
-        await this.mockMainnetPriceFeed.fetchPriceMock();
-        expect(await this.mockMainnetPriceFeed.lastGoodPrice()).to.equal(mockPrice2);
-        expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(false);
-
-        // relay more data to data feed
-        const mockPrice3 = h.toWei("2200");
-        const mockValue3 = abiCoder.encode(["uint256"], [mockPrice3]);
-        const { attestData: attestData3, currentValidatorSet: currentValidatorSet3, sigs: sigs3 } = await h.prepareOracleData(
-          ETH_USD_QUERY_ID,
-          mockValue3,
-          this.validators,
-          this.powers,
-          this.valCheckpoint
-        );
-
-        await this.guardedDataFeed.updateOracleData(attestData3, currentValidatorSet3, sigs3);
-
-        await this.mockMainnetPriceFeed.fetchPriceMock();
-        expect(await this.mockMainnetPriceFeed.lastGoodPrice()).to.equal(mockPrice3);
-        expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(false);
-      });
-
       it("Submit and retrieve 20 prices", async function () {
         for (let i = 0; i < 20; i++) {
           const mockPrice = h.toWei(String(2000 + i));
@@ -940,6 +899,201 @@ describe("GuardedNeriteDataFeed", function () {
           expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(false);
           await time.increase(60);
         }
+      });
+
+      it("Should handle zero price values correctly", async function () {
+        // Create oracle data with zero value
+        const zeroValue = abiCoder.encode(["uint256"], [0]);
+        
+        const { attestData, currentValidatorSet, sigs } = await h.prepareOracleData(
+          ETH_USD_QUERY_ID,
+          zeroValue,
+          this.validators,
+          this.powers,
+          this.valCheckpoint
+        );
+        
+        await this.guardedDataFeed.updateOracleData(attestData, currentValidatorSet, sigs);
+
+        // MockMainnetPriceFeedBase should handle zero values
+        await this.mockMainnetPriceFeed.fetchPriceMock();
+        expect(await this.mockMainnetPriceFeed.lastGoodPrice()).to.equal(0);
+        expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(true);
+      });
+
+      it("Should handle very large price values correctly", async function () {
+        // Create oracle data with very large value (near max uint256)
+        const largeValue = BigInt("11579208923731619542357098500868790785326998466564056403945758400791312963993");
+        const mockValue = abiCoder.encode(["uint256"], [largeValue]);
+        
+        const { attestData, currentValidatorSet, sigs } = await h.prepareOracleData(
+          ETH_USD_QUERY_ID,
+          mockValue,
+          this.validators,
+          this.powers,
+          this.valCheckpoint
+        );
+        
+        await this.guardedDataFeed.updateOracleData(attestData, currentValidatorSet, sigs);
+        
+        // MockMainnetPriceFeedBase should handle large values correctly
+        await this.mockMainnetPriceFeed.fetchPriceMock();
+        expect(await this.mockMainnetPriceFeed.lastGoodPrice()).to.equal(largeValue);
+        expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(false);
+      });
+
+      it("Should handle different price ranges correctly", async function () {
+        const testPrices = [
+          h.toWei("1"),      // $1
+          h.toWei("100"),    // $100
+          h.toWei("1000"),   // $1000
+          h.toWei("50000"),  // $50000
+          BigInt("1"),       // 1 wei
+          BigInt("999999999999999999"), // Almost 1 ETH
+        ];
+        
+        for (let i = 0; i < testPrices.length; i++) {
+          await time.increase(1);
+          const priceValue = testPrices[i];
+          const mockValue = abiCoder.encode(["uint256"], [priceValue]);
+          
+          const { attestData, currentValidatorSet, sigs } = await h.prepareOracleData(
+            ETH_USD_QUERY_ID,
+            mockValue,
+            this.validators,
+            this.powers,
+            this.valCheckpoint
+          );
+          
+          await this.guardedDataFeed.updateOracleData(attestData, currentValidatorSet, sigs);
+          
+          await this.mockMainnetPriceFeed.fetchPriceMock();
+          expect(await this.mockMainnetPriceFeed.lastGoodPrice()).to.equal(priceValue);
+          expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(false);
+        }
+      });
+
+      it("Should handle staleness correctly with MockMainnetPriceFeedBase", async function () {
+        // Update with fresh data first
+        const mockPrice = h.toWei("2000");
+        const mockValue = abiCoder.encode(["uint256"], [mockPrice]);
+        const { attestData, currentValidatorSet, sigs } = await h.prepareOracleData(
+          ETH_USD_QUERY_ID,
+          mockValue,
+          this.validators,
+          this.powers,
+          this.valCheckpoint
+        );
+
+        await this.guardedDataFeed.updateOracleData(attestData, currentValidatorSet, sigs);
+        
+        // Should work fine initially
+        await this.mockMainnetPriceFeed.fetchPriceMock();
+        expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(false);
+        expect(await this.mockMainnetPriceFeed.lastGoodPrice()).to.equal(mockPrice);
+        
+        // Move time forward beyond staleness threshold (25 hours)
+        await time.increase(STALENESS_THRESHOLD + 60);
+        
+        // Now fetchPriceMock should trigger shutdown due to stale data
+        await this.mockMainnetPriceFeed.fetchPriceMock();
+        expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(true);
+      });
+
+      it("Should handle pause/unpause sequence with multiple price updates", async function () {
+        // NOTE: assumes that fetchPriceMock is not called while paused
+        // Start with initial data
+        const initialPrice = h.toWei("2000");
+        const initialValue = abiCoder.encode(["uint256"], [initialPrice]);
+        let { attestData, currentValidatorSet, sigs } = await h.prepareOracleData(
+          ETH_USD_QUERY_ID,
+          initialValue,
+          this.validators,
+          this.powers,
+          this.valCheckpoint
+        );
+
+        await this.guardedDataFeed.updateOracleData(attestData, currentValidatorSet, sigs);
+        
+        // Verify initial state
+        await this.mockMainnetPriceFeed.fetchPriceMock();
+        expect(await this.mockMainnetPriceFeed.lastGoodPrice()).to.equal(initialPrice);
+        expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(false);
+
+        // Pause and verify paused
+        await this.guardedDataFeed.connect(this.admin).pause();
+        expect(await this.guardedDataFeed.paused()).to.equal(true);
+        
+        // Unpause
+        await this.guardedDataFeed.connect(this.admin).unpause();
+        
+        // Add new data
+        await time.increase(60);
+        const newPrice = h.toWei("2100");
+        const newValue = abiCoder.encode(["uint256"], [newPrice]);
+        ({ attestData, currentValidatorSet, sigs } = await h.prepareOracleData(
+          ETH_USD_QUERY_ID,
+          newValue,
+          this.validators,
+          this.powers,
+          this.valCheckpoint
+        ));
+
+        await this.guardedDataFeed.updateOracleData(attestData, currentValidatorSet, sigs);
+
+        // Verify new mock can fetch the updated price
+        await this.mockMainnetPriceFeed.fetchPriceMock();
+        expect(await this.mockMainnetPriceFeed.lastGoodPrice()).to.equal(newPrice);
+        expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(false);
+      });
+
+      it("Should handle rapid price updates correctly", async function () {
+        const prices = [h.toWei("2000"), h.toWei("2050"), h.toWei("1980"), h.toWei("2100"), h.toWei("1950")];
+        
+        for (let i = 0; i < prices.length; i++) {
+          const mockValue = abiCoder.encode(["uint256"], [prices[i]]);
+          const { attestData, currentValidatorSet, sigs } = await h.prepareOracleData(
+            ETH_USD_QUERY_ID,
+            mockValue,
+            this.validators,
+            this.powers,
+            this.valCheckpoint
+          );
+
+          await this.guardedDataFeed.updateOracleData(attestData, currentValidatorSet, sigs);
+          
+          // Fetch each price and verify
+          await this.mockMainnetPriceFeed.fetchPriceMock();
+          expect(await this.mockMainnetPriceFeed.lastGoodPrice()).to.equal(prices[i]);
+          expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(false);
+          
+          // Small time increase between updates
+          await time.increase(1);
+        }
+      });
+
+      it("Should handle price with many decimals correctly", async function () {
+        // Verify decimals match between contracts
+        expect(await this.guardedDataFeed.decimals()).to.equal(DECIMALS);
+        const ethUsdOracle = await this.mockMainnetPriceFeed.ethUsdOracle();
+        expect(ethUsdOracle.decimals).to.equal(DECIMALS);
+        
+        // Test with price that uses decimal precision
+        const precisePrice = h.toWei("2000.123456789");
+        const mockValue = abiCoder.encode(["uint256"], [precisePrice]);
+        const { attestData, currentValidatorSet, sigs } = await h.prepareOracleData(
+          ETH_USD_QUERY_ID,
+          mockValue,
+          this.validators,
+          this.powers,
+          this.valCheckpoint
+        );
+
+        await this.guardedDataFeed.updateOracleData(attestData, currentValidatorSet, sigs);
+        
+        await this.mockMainnetPriceFeed.fetchPriceMock();
+        expect(await this.mockMainnetPriceFeed.lastGoodPrice()).to.equal(precisePrice);
+        expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(false);
       });
     });
   });

@@ -2,7 +2,7 @@
 
 GuardedNeriteDataFeed provides Tellor oracle data for Nerite. This repository contains two main contracts:
 
-- **GuardedNeriteDataFeed**: Stores and validates Tellor oracle data with guardian pause controls, and allows for data retrieval via a Chainlink-compatible `latestRoundData()` function
+- **GuardedNeriteDataFeed**: Stores and validates Tellor oracle data with guardian pause controls, and allows for data retrieval via a Chainlink-compatible `latestRoundData()` function. A separate instance of this contract is deployed for each price feed.
 - **GuardedPausable**: Base contract providing guardian management and pause functionality
 
 ## Install
@@ -61,3 +61,15 @@ Verify the contracts:
 ```shell
 npx hardhat ignition verify sepolia-eth-usd-feed
 ```
+
+## Maintainers <a name="maintainers"> </a>
+This repository is maintained by the [Tellor team](https://github.com/orgs/tellor-io/people)
+
+
+## How to Contribute<a name="how2contribute"> </a>  
+
+Check out our issues log here on Github or feel free to reach out anytime [info@tellor.io](mailto:info@tellor.io)
+
+## Copyright
+
+Tellor Inc. 2025

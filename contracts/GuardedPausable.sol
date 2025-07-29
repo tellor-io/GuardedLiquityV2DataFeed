@@ -5,10 +5,11 @@ pragma solidity 0.8.19;
  @author Tellor Inc.
  @title GuardedPausable
  @dev This contract acts as a pausable parent contract. It allows
- * designated guardians to pause the contract in case of emergencies
- * or attacks. The contract maintains a list of guardian addresses who can
- * collectively manage the pause state and guardian membership. Child contracts
- * should add the _onlyUnpaused() function to any functions they wish to be pausable.
+ * guardians to pause the contract in case of emergencies or attacks. 
+ * The contract maintains a list of guardian addresses who can each manage 
+ * the pause state. An admin address can add/remove guardians. 
+ * Child contracts should add the _onlyUnpaused() function to any functions 
+ * they wish to be pausable.
 */
 contract GuardedPausable {
     // Storage
@@ -26,8 +27,8 @@ contract GuardedPausable {
 
     // Functions
     /**
-     * @dev Initializes the GuardedPausable with a first guardian
-     * @param _admin address of the initial guardian who can pause/unpause the contract
+     * @dev Initializes the GuardedPausable with an admin address
+     * @param _admin address of the initial admin who can add/remove guardians
      */
     constructor(address _admin) {
         guardians[_admin] = true;

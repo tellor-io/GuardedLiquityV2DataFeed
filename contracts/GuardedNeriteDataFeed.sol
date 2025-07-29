@@ -8,8 +8,9 @@ import { NeriteAggregatorV3Interface } from "./interfaces/NeriteAggregatorV3Inte
 /**
  @author Tellor Inc.
  @title GuardedNeriteDataFeed
- @dev this contract is used to store data for a single price feed. It is guarded by a GuardedPausable contract, which can pause 
- * the data feed and add/remove guardians. Pausing only affects the latestRoundData function.
+ @dev this contract is used to store data for a single price feed. It is 
+ * guarded by a GuardedPausable contract, which can pause data feed reads and 
+ * add/remove guardians. Pausing only affects the latestRoundData function.
 */
 contract GuardedNeriteDataFeed is GuardedPausable, NeriteAggregatorV3Interface {
 
@@ -114,7 +115,7 @@ contract GuardedNeriteDataFeed is GuardedPausable, NeriteAggregatorV3Interface {
     {
         _onlyUnpaused();
         (AggregateData memory _aggregateData) = _getCurrentAggregateData();
-        require(_aggregateData.price > 0 && _aggregateData.aggregateTimestamp > 0, "GuardedNeriteDataFeed: No data available");
+        require(_aggregateData.aggregateTimestamp > 0, "GuardedNeriteDataFeed: No data available");
         // convert aggregateTimestamp to seconds
         return (1, _aggregateData.price, 0, _aggregateData.aggregateTimestamp / MS_PER_SECOND, 0);
     }
