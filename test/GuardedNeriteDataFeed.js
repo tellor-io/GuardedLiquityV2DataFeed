@@ -186,6 +186,27 @@ describe("GuardedNeriteDataFeed", function () {
         await expect(guardedDataFeed.connect(admin).addGuardian(guardian2.address))
           .to.be.revertedWith("GuardedPausable: Not an admin");
       });
+
+      it("Should only remove admin when last guardian", async function () {
+        const { guardedDataFeed, admin, guardian2 } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        await guardedDataFeed.connect(admin).addGuardian(guardian2.address);
+        expect(await guardedDataFeed.guardianCount()).to.equal(2);
+        await expect(guardedDataFeed.connect(admin).removeGuardian(admin.address))
+          .to.be.revertedWith("GuardedPausable: Cannot remove admin if there are other guardians");
+        expect(await guardedDataFeed.admin()).to.equal(admin.address);
+        // remove guardian2
+        await expect(guardedDataFeed.connect(admin).removeGuardian(guardian2.address))
+          .to.emit(guardedDataFeed, "GuardianRemoved")
+          .withArgs(guardian2.address);
+        expect(await guardedDataFeed.guardians(guardian2)).to.equal(false);
+        expect(await guardedDataFeed.guardianCount()).to.equal(1);
+        // remove admin, this time it should work
+        await expect(guardedDataFeed.connect(admin).removeGuardian(admin.address))
+          .to.emit(guardedDataFeed, "AdminRemoved");
+        expect(await guardedDataFeed.admin()).to.equal("0x0000000000000000000000000000000000000000");
+        expect(await guardedDataFeed.guardians(admin)).to.equal(false);
+        expect(await guardedDataFeed.guardianCount()).to.equal(0);
+      });
     });
   });
 

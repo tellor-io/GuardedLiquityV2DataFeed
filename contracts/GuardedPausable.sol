@@ -55,12 +55,13 @@ contract GuardedPausable {
     function removeGuardian(address _guardian) public {
         require(msg.sender == admin, "GuardedPausable: Not an admin");
         require(guardians[_guardian], "GuardedPausable: Guardian does not exist");
-        guardians[_guardian] = false;
-        guardianCount--;
         if (_guardian == admin) {
+            require(guardianCount == 1, "GuardedPausable: Cannot remove admin if there are other guardians");
             admin = address(0);
             emit AdminRemoved();
         }
+        guardians[_guardian] = false;
+        guardianCount--;
         emit GuardianRemoved(_guardian);
     }
 
