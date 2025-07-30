@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "../interfaces/AggregatorV3Interface.sol";
+import "../interfaces/NeriteAggregatorV3Interface.sol";
 
 /**
  @author Tellor Inc.
  @title MockMainnetPriceFeedBase
  @dev this contract simulates how MainnetPriceFeedBase and other price feed contracts
- * interact with Chainlink price feeds. It's used for testing the GuardedTellorChainlinkAdapter
- * to ensure compatibility with existing Chainlink-based integrations.
+ * interact with Chainlink price feeds. It's used for testing the GuardedNeriteDataFeed
 */
 contract MockMainnetPriceFeedBase {
     // Determines where the PriceFeed sources data from. Possible states:
@@ -22,7 +21,7 @@ contract MockMainnetPriceFeedBase {
     bool public shutDown;
 
     struct Oracle {
-        AggregatorV3Interface aggregator;
+        NeriteAggregatorV3Interface aggregator;
         uint256 stalenessThreshold;
         uint8 decimals;
     }
@@ -43,7 +42,7 @@ contract MockMainnetPriceFeedBase {
 
     constructor(address _ethUsdOracleAddress, uint256 _ethUsdStalenessThreshold) {
         // Store ETH-USD oracle
-        ethUsdOracle.aggregator = AggregatorV3Interface(_ethUsdOracleAddress);
+        ethUsdOracle.aggregator = NeriteAggregatorV3Interface(_ethUsdOracleAddress);
         ethUsdOracle.stalenessThreshold = _ethUsdStalenessThreshold;
         ethUsdOracle.decimals = ethUsdOracle.aggregator.decimals();
 
@@ -77,7 +76,7 @@ contract MockMainnetPriceFeedBase {
         return (scaledPrice, oracleIsDown);
     }
 
-    function _getCurrentChainlinkResponse(AggregatorV3Interface _aggregator)
+    function _getCurrentChainlinkResponse(NeriteAggregatorV3Interface _aggregator)
         internal
         view
         returns (ChainlinkResponse memory chainlinkResponse)

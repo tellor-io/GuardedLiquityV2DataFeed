@@ -4,6 +4,7 @@ const { vars } = require("hardhat/config");
 // Get environment variables with fallbacks to avoid errors during test discovery
 const INFURA_API_KEY = vars.get("INFURA_API_KEY", "");
 const PK = vars.get("PK", "0x0000000000000000000000000000000000000000000000000000000000000001");
+const ETHERSCAN_API_KEY = vars.get("ETHERSCAN_API_KEY", "");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -46,7 +47,8 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      'sagaevm': 'empty'
+      'sagaevm': 'empty',
+      'sepolia': ETHERSCAN_API_KEY
     },
     customChains: [
       {
