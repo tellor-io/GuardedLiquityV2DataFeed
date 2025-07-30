@@ -157,6 +157,21 @@ async function prepareOracleDataWithTimestamp(queryId, value, validators, powers
   });
 }
 
+function attestDataStructToArray(attestData) {
+  return [
+    attestData.queryId,
+    [
+      attestData.report.value,
+      attestData.report.timestamp,
+      attestData.report.aggregatePower,
+      attestData.report.previousTimestamp,
+      attestData.report.nextTimestamp,
+      attestData.report.lastConsensusTimestamp,
+    ],
+    attestData.attestationTimestamp,
+  ];
+}
+
 // Re-export all the original helpers for convenience
 module.exports = {
   ...h, // Export all original helpers
@@ -164,4 +179,5 @@ module.exports = {
   prepareOldOracleData,
   prepareOldAttestationData,
   prepareOracleDataWithTimestamp,
+  attestDataStructToArray,
 }; 

@@ -307,7 +307,7 @@ describe("GuardedNeriteDataFeed", function () {
         // Update oracle data
         await expect(guardedDataFeed.updateOracleData(attestData, currentValidatorSet, sigs))
           .to.emit(guardedDataFeed, "OracleUpdated")
-          .withArgs(ETH_USD_QUERY_ID, mockPrice, attestData.report.aggregatePower);
+          .withArgs(mockPrice, h.attestDataStructToArray(attestData));
         
         // Check that data was stored correctly
         expect(await guardedDataFeed.getAggregateValueCount()).to.equal(1);
@@ -477,7 +477,7 @@ describe("GuardedNeriteDataFeed", function () {
         // This should succeed if all optimistic data validation passes
         await expect(guardedDataFeed.updateOracleData(attestData, currentValidatorSet, sigs))
           .to.emit(guardedDataFeed, "OracleUpdated")
-          .withArgs(ETH_USD_QUERY_ID, mockPrice, attestData.report.aggregatePower);
+          .withArgs(mockPrice, h.attestDataStructToArray(attestData));
         
         // Verify data was stored
         expect(await guardedDataFeed.getAggregateValueCount()).to.equal(1);

@@ -36,7 +36,7 @@ contract GuardedNeriteDataFeed is GuardedPausable, NeriteAggregatorV3Interface {
     bytes32 public immutable queryId; // the query ID to retrieve current data for
 
     // Events
-    event OracleUpdated(bytes32 indexed queryId, int256 price, uint256 power);
+    event OracleUpdated(int256 price, OracleAttestationData attestData);
 
     // Functions
     /**
@@ -74,7 +74,7 @@ contract GuardedNeriteDataFeed is GuardedPausable, NeriteAggregatorV3Interface {
             _attestData.attestationTimestamp, 
             block.timestamp
         ));
-        emit OracleUpdated(_attestData.queryId, int256(_price), _attestData.report.aggregatePower);
+        emit OracleUpdated(_price, _attestData);
     }
 
     // Getter functions
