@@ -1,3 +1,5 @@
+[![Tests](https://github.com/tellor-io/GuardedNeriteDataFeed/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/tellor-io/GuardedNeriteDataFeed/actions/workflows/tests.yml)
+
 # GuardedNeriteDataFeed
 
 GuardedNeriteDataFeed provides Tellor oracle data for Nerite. This repository contains two main contracts:
