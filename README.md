@@ -1,4 +1,4 @@
-[![Tests](https://github.com/tellor-io/GuardedNeriteDataFeed/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/tellor-io/GuardedNeriteDataFeed/actions/workflows/tests.yml)
+[![Tests](https://github.com/tellor-io/GuardedLiquityV2DataFeed/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/tellor-io/GuardedLiquityV2DataFeed/actions/workflows/tests.yml)
 
 # GuardedLiquityV2DataFeed
 
@@ -64,6 +64,7 @@ Set constructor variables in `ignition/modules/GuardedLiquityV2OracleAdaptor.js`
 const DATA_BANK_ADDRESS = "0x0000000000000000000000000000000000000000";
 const QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000000";
 const DECIMALS = 18;
+const PROJECT_NAME = "ProjectA";
 const FEED_NAME = "ETH/USD";
 const ADMIN_ADDRESS = "0x0000000000000000000000000000000000000000";
 ```

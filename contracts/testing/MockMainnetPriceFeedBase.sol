@@ -7,7 +7,7 @@ import "../interfaces/LiquityV2OracleAggregatorV3Interface.sol";
  @author Tellor Inc.
  @title MockMainnetPriceFeedBase
  @dev this contract simulates how MainnetPriceFeedBase and other price feed contracts
- * interact with Chainlink price feeds. It's used for testing the GuardedNeriteDataFeed
+ * interact with Chainlink price feeds. It's used for testing the GuardedLiquityV2OracleAdaptor
 */
 contract MockMainnetPriceFeedBase {
     // Determines where the PriceFeed sources data from. Possible states:
