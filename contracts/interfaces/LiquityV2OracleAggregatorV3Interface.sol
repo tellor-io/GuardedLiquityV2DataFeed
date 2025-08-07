@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.19;
 
-interface NeriteAggregatorV3Interface {
+interface LiquityV2OracleAggregatorV3Interface {
     function decimals() external view returns (uint8);
     function latestRoundData()
         external

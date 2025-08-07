@@ -1,22 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {NeriteAggregatorV3Interface} from "./interfaces/NeriteAggregatorV3Interface.sol";
+import {LiquityV2OracleAggregatorV3Interface} from "./interfaces/LiquityV2OracleAggregatorV3Interface.sol";
 import {ITellorDataBank} from "./interfaces/ITellorDataBank.sol";
 import {GuardedPausable} from "./GuardedPausable.sol";
 
 /**
  @author Tellor Inc.
- @title GuardedNeriteOracleAdaptor
- @dev this contract implements NeriteAggregatorV3Interface to provide Tellor oracle data from a TellorDataBank.
+ @title GuardedLiquityV2OracleAdaptor
+ @dev this contract implements LiquityV2OracleAggregatorV3Interface to provide Tellor oracle data from a TellorDataBank.
  * It is guarded by a GuardedPausable contract to allow for pausing and unpausing of oracle reads.
  */
-contract GuardedNeriteOracleAdaptor is NeriteAggregatorV3Interface, GuardedPausable {
+contract GuardedLiquityV2OracleAdaptor is LiquityV2OracleAggregatorV3Interface, GuardedPausable {
     // Storage
     ITellorDataBank public immutable dataBank; // the Tellor data bank contract to retrieve oracle data from
     bytes32 public immutable queryId; // the specific query ID this adapter serves data for
     uint8 public immutable decimals; // the number of decimals for the price data
     string public name; // the name of the price feed
+    string public project; // the project or protocol this price feed is for
     uint256 public constant MS_PER_SECOND = 1000; // the number of milliseconds in a second
 
     /**
@@ -24,13 +25,15 @@ contract GuardedNeriteOracleAdaptor is NeriteAggregatorV3Interface, GuardedPausa
      * @param _tellorDataBank address of the TellorDataBank contract
      * @param _queryId the query ID this adapter will serve data for
      * @param _decimals the number of decimals for the returned price data
+     * @param _project the project or protocol this price feed is for
      * @param _name the name or description of the price feed
      * @param _admin the address of the admin who can add and remove guardians
      */
-    constructor(address _tellorDataBank, bytes32 _queryId, uint8 _decimals, string memory _name, address _admin) GuardedPausable(_admin) {
+    constructor(address _tellorDataBank, bytes32 _queryId, uint8 _decimals, string memory _project, string memory _name, address _admin) GuardedPausable(_admin) {
         dataBank = ITellorDataBank(_tellorDataBank);
         queryId = _queryId;
         decimals = _decimals;
+        project = _project;
         name = _name;
     }
 
@@ -55,10 +58,10 @@ contract GuardedNeriteOracleAdaptor is NeriteAggregatorV3Interface, GuardedPausa
     {
         _onlyUnpaused();
         (ITellorDataBank.AggregateData memory _aggregateData) = dataBank.getCurrentAggregateData(queryId);
-        require(_aggregateData.aggregateTimestamp > 0, "GuardedNeriteOracleAdaptor: No data available");
+        require(_aggregateData.aggregateTimestamp > 0, "GuardedLiquityV2OracleAdaptor: No data available");
         // decode the oracle value from bytes to uint256
         uint256 _price = abi.decode(_aggregateData.value, (uint256));
-        require(_price < uint256(type(int256).max), "GuardedNeriteOracleAdaptor: Price too large");
+        require(_price < uint256(type(int256).max), "GuardedLiquityV2OracleAdaptor: Price too large");
         // convert aggregateTimestamp to seconds
         return (1, int256(_price), 0, _aggregateData.aggregateTimestamp / MS_PER_SECOND, 0);
     }

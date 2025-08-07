@@ -1,17 +1,17 @@
 [![Tests](https://github.com/tellor-io/GuardedNeriteDataFeed/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/tellor-io/GuardedNeriteDataFeed/actions/workflows/tests.yml)
 
-# GuardedNeriteDataFeed
+# GuardedLiquityV2DataFeed
 
-GuardedNeriteDataFeed provides Tellor oracle data for Nerite. This repository contains three main contracts:
+GuardedLiquityV2DataFeed provides Tellor oracle data for Liquity V2. This repository contains three main contracts:
 
 - **TellorDataBank**: Stores and validates Tellor oracle data for multiple query IDs. Handles both consensus and optimistic data from the Tellor layer bridge.
-- **GuardedNeriteOracleAdaptor**: Provides a Chainlink-compatible `latestRoundData()` interface for a specific query ID, with guardian pause controls. A separate instance is deployed for each price feed.
+- **GuardedLiquityV2OracleAdaptor**: Provides a Chainlink-compatible `latestRoundData()` interface for a specific query ID, with guardian pause controls. A separate instance is deployed for each price feed.
 - **GuardedPausable**: Base contract providing guardian management and pause functionality
 
 ## Install
 ```shell
-git clone https://github.com/tellor-io/GuardedNeriteDataFeed.git
-cd GuardedNeriteDataFeed
+git clone https://github.com/tellor-io/GuardedLiquityV2DataFeed.git
+cd GuardedLiquityV2DataFeed
 npm i
 ```
 
@@ -56,9 +56,9 @@ Deploy:
 npx hardhat ignition deploy ignition/modules/TellorDataBank.js --network sepolia --deployment-id sepolia-data-bank
 ```
 
-### Deploy GuardedNeriteOracleAdaptor
+### Deploy GuardedLiquityV2OracleAdaptor
 
-Set constructor variables in `ignition/modules/GuardedNeriteOracleAdaptor.js`:
+Set constructor variables in `ignition/modules/GuardedLiquityV2OracleAdaptor.js`:
 
 ```javascript
 const DATA_BANK_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -71,7 +71,7 @@ const ADMIN_ADDRESS = "0x0000000000000000000000000000000000000000";
 Deploy:
 
 ```shell
-npx hardhat ignition deploy ignition/modules/GuardedNeriteOracleAdaptor.js --network sepolia --deployment-id sepolia-eth-usd-adaptor
+npx hardhat ignition deploy ignition/modules/GuardedLiquityV2OracleAdaptor.js --network sepolia --deployment-id sepolia-eth-usd-adaptor
 ```
 
 ### Verify

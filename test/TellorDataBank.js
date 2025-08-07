@@ -7,7 +7,7 @@ const { ethers } = require("hardhat");
 const h = require("./customHelpers.js");
 const TellorDataBridgeArtifact = require("usingtellorlayer/artifacts/contracts/testing/bridge/TellorDataBridge.sol/TellorDataBridge.json");
 
-describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
+describe("TellorDataBank and GuardedLiquityV2OracleAdaptor", function () {
   // Test data for ETH/USD price queries
   const abiCoder = new ethers.AbiCoder();
   const ETH_USD_QUERY_DATA_ARGS = abiCoder.encode(["string", "string"], ["eth", "usd"]);
@@ -24,7 +24,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
   const STALENESS_THRESHOLD = 3600 * 25; // 25 hours staleness threshold
 
   // Fixture to deploy contracts for testing
-  async function deployGuardedNeriteDataFeedFixture() {
+  async function deployGuardedLiquityV2DataFeedFixture() {
     const [deployer, admin, guardian2, nonGuardian] = await ethers.getSigners();
     
     // Deploy TellorDataBridge
@@ -46,20 +46,20 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
     const tellorDataBank = await TellorDataBank.deploy(dataBridge.target);
     await tellorDataBank.waitForDeployment();
 
-    // Deploy GuardedNeriteOracleAdaptor with tellorDataBank and admin as the first guardian
-    const GuardedNeriteOracleAdaptor = await ethers.getContractFactory("GuardedNeriteOracleAdaptor");
-    const guardedNeriteOracleAdaptor = await GuardedNeriteOracleAdaptor.deploy(tellorDataBank.target, ETH_USD_QUERY_ID, DECIMALS, "ETH/USD", admin.address);
-    await guardedNeriteOracleAdaptor.waitForDeployment();
+    // Deploy GuardedLiquityV2OracleAdaptor with tellorDataBank and admin as the first guardian
+    const GuardedLiquityV2OracleAdaptor = await ethers.getContractFactory("GuardedLiquityV2OracleAdaptor");
+    const guardedLiquityV2OracleAdaptor = await GuardedLiquityV2OracleAdaptor.deploy(tellorDataBank.target, ETH_USD_QUERY_ID, DECIMALS, "ProjectA", "ETH/USD", admin.address);
+    await guardedLiquityV2OracleAdaptor.waitForDeployment();
 
     // Deploy MockMainnetPriceFeedBase for integration testing
     const MockMainnetPriceFeedBase = await ethers.getContractFactory("MockMainnetPriceFeedBase");
-    const mockMainnetPriceFeed = await MockMainnetPriceFeedBase.deploy(guardedNeriteOracleAdaptor.target, STALENESS_THRESHOLD);
+    const mockMainnetPriceFeed = await MockMainnetPriceFeedBase.deploy(guardedLiquityV2OracleAdaptor.target, STALENESS_THRESHOLD);
     await mockMainnetPriceFeed.waitForDeployment();
 
     return {
       dataBridge,
       tellorDataBank,
-      guardedNeriteOracleAdaptor,
+      guardedLiquityV2OracleAdaptor,
       mockMainnetPriceFeed,
       deployer,
       admin,
@@ -74,7 +74,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
 
   describe("Deployment", function () {
     it("Should set deployment variables correctly", async function () {
-      const { tellorDataBank, guardedNeriteOracleAdaptor, admin, dataBridge } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+      const { tellorDataBank, guardedLiquityV2OracleAdaptor, admin, dataBridge } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
       // tellorDataBank
       expect(await tellorDataBank.dataBridge()).to.equal(dataBridge.target);
       expect(await tellorDataBank.MAX_DATA_AGE()).to.equal(MAX_DATA_AGE);
@@ -82,140 +82,141 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       expect(await tellorDataBank.OPTIMISTIC_DELAY()).to.equal(OPTIMISTIC_DELAY);
       expect(await tellorDataBank.MS_PER_SECOND()).to.equal(MS_PER_SECOND);
       // oracle adaptor
-      expect(await guardedNeriteOracleAdaptor.dataBank()).to.equal(tellorDataBank.target);
-      expect(await guardedNeriteOracleAdaptor.queryId()).to.equal(ETH_USD_QUERY_ID);
-      expect(await guardedNeriteOracleAdaptor.decimals()).to.equal(DECIMALS);
-      expect(await guardedNeriteOracleAdaptor.name()).to.equal("ETH/USD");
-      expect(await guardedNeriteOracleAdaptor.MS_PER_SECOND()).to.equal(MS_PER_SECOND);
+      expect(await guardedLiquityV2OracleAdaptor.dataBank()).to.equal(tellorDataBank.target);
+      expect(await guardedLiquityV2OracleAdaptor.queryId()).to.equal(ETH_USD_QUERY_ID);
+      expect(await guardedLiquityV2OracleAdaptor.decimals()).to.equal(DECIMALS);
+      expect(await guardedLiquityV2OracleAdaptor.name()).to.equal("ETH/USD");
+      expect(await guardedLiquityV2OracleAdaptor.project()).to.equal("ProjectA");
+      expect(await guardedLiquityV2OracleAdaptor.MS_PER_SECOND()).to.equal(MS_PER_SECOND);
       // pausable
-      expect(await guardedNeriteOracleAdaptor.guardians(admin.address)).to.equal(true);
-      expect(await guardedNeriteOracleAdaptor.guardianCount()).to.equal(1);
-      expect(await guardedNeriteOracleAdaptor.admin()).to.equal(admin.address);
-      expect(await guardedNeriteOracleAdaptor.paused()).to.equal(false);
+      expect(await guardedLiquityV2OracleAdaptor.guardians(admin.address)).to.equal(true);
+      expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
+      expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal(admin.address);
+      expect(await guardedLiquityV2OracleAdaptor.paused()).to.equal(false);
     });
   });
 
   describe("Guardian Management", function () {
     describe("addGuardian", function () {
       it("Should allow admin to add new guardians", async function () {
-        const { guardedNeriteOracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         // guardian2 is not a guardian yet
-        expect(await guardedNeriteOracleAdaptor.guardians(guardian2.address)).to.equal(false);
-        expect(await guardedNeriteOracleAdaptor.guardianCount()).to.equal(1);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian2.address)).to.equal(false);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
 
-        await expect(guardedNeriteOracleAdaptor.connect(admin).addGuardian(guardian2.address))
-          .to.emit(guardedNeriteOracleAdaptor, "GuardianAdded")
+        await expect(guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address))
+          .to.emit(guardedLiquityV2OracleAdaptor, "GuardianAdded")
           .withArgs(guardian2.address);
         
-        expect(await guardedNeriteOracleAdaptor.guardians(guardian2.address)).to.equal(true);
-        expect(await guardedNeriteOracleAdaptor.guardianCount()).to.equal(2);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian2.address)).to.equal(true);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(2);
       });
 
       it("Should revert when non-admin tries to add guardian", async function () {
-        const { guardedNeriteOracleAdaptor, guardian2, nonGuardian, admin } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { guardedLiquityV2OracleAdaptor, guardian2, nonGuardian, admin } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
-        await expect(guardedNeriteOracleAdaptor.connect(guardian2).addGuardian(guardian2.address))
+        await expect(guardedLiquityV2OracleAdaptor.connect(guardian2).addGuardian(guardian2.address))
           .to.be.revertedWith("GuardedPausable: Not an admin");
-        expect(await guardedNeriteOracleAdaptor.guardians(guardian2.address)).to.equal(false);
-        expect(await guardedNeriteOracleAdaptor.guardianCount()).to.equal(1);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian2.address)).to.equal(false);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
 
         // add guardian2
-        await guardedNeriteOracleAdaptor.connect(admin).addGuardian(guardian2.address);
-        expect(await guardedNeriteOracleAdaptor.guardians(guardian2.address)).to.equal(true);
-        expect(await guardedNeriteOracleAdaptor.guardianCount()).to.equal(2);
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian2.address)).to.equal(true);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(2);
 
         // add guardian2 tries to add nonGuardian
-        await expect(guardedNeriteOracleAdaptor.connect(guardian2).addGuardian(nonGuardian.address))
+        await expect(guardedLiquityV2OracleAdaptor.connect(guardian2).addGuardian(nonGuardian.address))
           .to.be.revertedWith("GuardedPausable: Not an admin");
       });
 
       it("Should revert when trying to add existing guardian", async function () {
-        const { guardedNeriteOracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         // Add guardian2 first
-        await guardedNeriteOracleAdaptor.connect(admin).addGuardian(guardian2.address);
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address);
         
         // Try to add guardian2 again
-        await expect(guardedNeriteOracleAdaptor.connect(admin).addGuardian(guardian2.address))
+        await expect(guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address))
           .to.be.revertedWith("GuardedPausable: Guardian already exists");
       });
     });
 
     describe("removeGuardian", function () {
       it("Should allow admin to remove guardians", async function () {
-        const { guardedNeriteOracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         // Add guardian2 
-        await guardedNeriteOracleAdaptor.connect(admin).addGuardian(guardian2.address);
-        expect(await guardedNeriteOracleAdaptor.guardianCount()).to.equal(2);
-        expect(await guardedNeriteOracleAdaptor.guardians(guardian2)).to.equal(true);
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(2);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian2)).to.equal(true);
         
         // Remove guardian2
-        await expect(guardedNeriteOracleAdaptor.connect(admin).removeGuardian(guardian2.address))
-          .to.emit(guardedNeriteOracleAdaptor, "GuardianRemoved")
+        await expect(guardedLiquityV2OracleAdaptor.connect(admin).removeGuardian(guardian2.address))
+          .to.emit(guardedLiquityV2OracleAdaptor, "GuardianRemoved")
           .withArgs(guardian2.address);
         
-        expect(await guardedNeriteOracleAdaptor.guardians(guardian2)).to.equal(false);
-        expect(await guardedNeriteOracleAdaptor.guardianCount()).to.equal(1);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian2)).to.equal(false);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
       });
 
       it("Should revert when non-admin tries to remove guardian", async function () {
-        const { guardedNeriteOracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
-        await expect(guardedNeriteOracleAdaptor.connect(guardian2).removeGuardian(admin.address))
+        await expect(guardedLiquityV2OracleAdaptor.connect(guardian2).removeGuardian(admin.address))
           .to.be.revertedWith("GuardedPausable: Not an admin");
 
         // add guardian2
-        await guardedNeriteOracleAdaptor.connect(admin).addGuardian(guardian2.address);
-        expect(await guardedNeriteOracleAdaptor.guardians(guardian2)).to.equal(true);
-        expect(await guardedNeriteOracleAdaptor.guardianCount()).to.equal(2);
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian2)).to.equal(true);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(2);
 
-        await expect(guardedNeriteOracleAdaptor.connect(guardian2).removeGuardian(admin.address))
+        await expect(guardedLiquityV2OracleAdaptor.connect(guardian2).removeGuardian(admin.address))
           .to.be.revertedWith("GuardedPausable: Not an admin");
       });
 
       it("Should revert when trying to remove non-existent guardian", async function () {
-        const { guardedNeriteOracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
-        await expect(guardedNeriteOracleAdaptor.connect(admin).removeGuardian(guardian2.address))
+        await expect(guardedLiquityV2OracleAdaptor.connect(admin).removeGuardian(guardian2.address))
           .to.be.revertedWith("GuardedPausable: Guardian does not exist");
       });
 
       it("Should be able to remove admin", async function () {
-        const { guardedNeriteOracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedNeriteDataFeedFixture);
-        expect(await guardedNeriteOracleAdaptor.admin()).to.equal(admin.address);
-        expect(await guardedNeriteOracleAdaptor.guardians(admin)).to.equal(true);
-        expect(await guardedNeriteOracleAdaptor.guardianCount()).to.equal(1);
-        await expect(guardedNeriteOracleAdaptor.connect(admin).removeGuardian(admin.address))
-          .to.emit(guardedNeriteOracleAdaptor, "AdminRemoved");
-        expect(await guardedNeriteOracleAdaptor.admin()).to.equal("0x0000000000000000000000000000000000000000");
-        expect(await guardedNeriteOracleAdaptor.guardians(admin)).to.equal(false);
-        expect(await guardedNeriteOracleAdaptor.guardianCount()).to.equal(0);
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal(admin.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(admin)).to.equal(true);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
+        await expect(guardedLiquityV2OracleAdaptor.connect(admin).removeGuardian(admin.address))
+          .to.emit(guardedLiquityV2OracleAdaptor, "AdminRemoved");
+        expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal("0x0000000000000000000000000000000000000000");
+        expect(await guardedLiquityV2OracleAdaptor.guardians(admin)).to.equal(false);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(0);
         // old admin can't add guardian2 now
-        await expect(guardedNeriteOracleAdaptor.connect(admin).addGuardian(guardian2.address))
+        await expect(guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address))
           .to.be.revertedWith("GuardedPausable: Not an admin");
       });
 
       it("Should only remove admin when last guardian", async function () {
-        const { guardedNeriteOracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedNeriteDataFeedFixture);
-        await guardedNeriteOracleAdaptor.connect(admin).addGuardian(guardian2.address);
-        expect(await guardedNeriteOracleAdaptor.guardianCount()).to.equal(2);
-        await expect(guardedNeriteOracleAdaptor.connect(admin).removeGuardian(admin.address))
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(2);
+        await expect(guardedLiquityV2OracleAdaptor.connect(admin).removeGuardian(admin.address))
           .to.be.revertedWith("GuardedPausable: Cannot remove admin if there are other guardians");
-        expect(await guardedNeriteOracleAdaptor.admin()).to.equal(admin.address);
+        expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal(admin.address);
         // remove guardian2
-        await expect(guardedNeriteOracleAdaptor.connect(admin).removeGuardian(guardian2.address))
-          .to.emit(guardedNeriteOracleAdaptor, "GuardianRemoved")
+        await expect(guardedLiquityV2OracleAdaptor.connect(admin).removeGuardian(guardian2.address))
+          .to.emit(guardedLiquityV2OracleAdaptor, "GuardianRemoved")
           .withArgs(guardian2.address);
-        expect(await guardedNeriteOracleAdaptor.guardians(guardian2)).to.equal(false);
-        expect(await guardedNeriteOracleAdaptor.guardianCount()).to.equal(1);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian2)).to.equal(false);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
         // remove admin, this time it should work
-        await expect(guardedNeriteOracleAdaptor.connect(admin).removeGuardian(admin.address))
-          .to.emit(guardedNeriteOracleAdaptor, "AdminRemoved");
-        expect(await guardedNeriteOracleAdaptor.admin()).to.equal("0x0000000000000000000000000000000000000000");
-        expect(await guardedNeriteOracleAdaptor.guardians(admin)).to.equal(false);
-        expect(await guardedNeriteOracleAdaptor.guardianCount()).to.equal(0);
+        await expect(guardedLiquityV2OracleAdaptor.connect(admin).removeGuardian(admin.address))
+          .to.emit(guardedLiquityV2OracleAdaptor, "AdminRemoved");
+        expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal("0x0000000000000000000000000000000000000000");
+        expect(await guardedLiquityV2OracleAdaptor.guardians(admin)).to.equal(false);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(0);
       });
     });
   });
@@ -223,74 +224,74 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
   describe("Pause/Unpause Functionality", function () {
     describe("pause", function () {
       it("Should allow guardians to pause the contract", async function () {
-        const { guardedNeriteOracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
-        await expect(guardedNeriteOracleAdaptor.connect(admin).pause())
-          .to.emit(guardedNeriteOracleAdaptor, "Paused");
+        await expect(guardedLiquityV2OracleAdaptor.connect(admin).pause())
+          .to.emit(guardedLiquityV2OracleAdaptor, "Paused");
         
-        expect(await guardedNeriteOracleAdaptor.paused()).to.equal(true);
+        expect(await guardedLiquityV2OracleAdaptor.paused()).to.equal(true);
 
-        await guardedNeriteOracleAdaptor.connect(admin).addGuardian(guardian2.address);
-        expect(await guardedNeriteOracleAdaptor.guardians(guardian2)).to.equal(true);
-        expect(await guardedNeriteOracleAdaptor.guardianCount()).to.equal(2);
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian2)).to.equal(true);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(2);
 
-        await guardedNeriteOracleAdaptor.connect(admin).unpause();
-        expect(await guardedNeriteOracleAdaptor.paused()).to.equal(false);
+        await guardedLiquityV2OracleAdaptor.connect(admin).unpause();
+        expect(await guardedLiquityV2OracleAdaptor.paused()).to.equal(false);
 
-        await guardedNeriteOracleAdaptor.connect(guardian2).pause();
-        expect(await guardedNeriteOracleAdaptor.paused()).to.equal(true);
+        await guardedLiquityV2OracleAdaptor.connect(guardian2).pause();
+        expect(await guardedLiquityV2OracleAdaptor.paused()).to.equal(true);
       });
 
       it("Should revert when non-guardian tries to pause", async function () {
-        const { guardedNeriteOracleAdaptor, nonGuardian } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { guardedLiquityV2OracleAdaptor, nonGuardian } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
-        await expect(guardedNeriteOracleAdaptor.connect(nonGuardian).pause())
+        await expect(guardedLiquityV2OracleAdaptor.connect(nonGuardian).pause())
           .to.be.revertedWith("GuardedPausable: Not a guardian");
 
-        expect(await guardedNeriteOracleAdaptor.paused()).to.equal(false);
+        expect(await guardedLiquityV2OracleAdaptor.paused()).to.equal(false);
       });
 
       it("Should revert when trying to pause already paused contract", async function () {
-        const { guardedNeriteOracleAdaptor, admin } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { guardedLiquityV2OracleAdaptor, admin } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         // Pause first
-        await guardedNeriteOracleAdaptor.connect(admin).pause();
+        await guardedLiquityV2OracleAdaptor.connect(admin).pause();
         
         // Try to pause again
-        await expect(guardedNeriteOracleAdaptor.connect(admin).pause())
+        await expect(guardedLiquityV2OracleAdaptor.connect(admin).pause())
           .to.be.revertedWith("GuardedPausable: Already paused");
       });
     });
 
     describe("unpause", function () {
       it("Should allow guardians to unpause the contract", async function () {
-        const { guardedNeriteOracleAdaptor, admin } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { guardedLiquityV2OracleAdaptor, admin } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         // Pause first
-        await guardedNeriteOracleAdaptor.connect(admin).pause();
-        expect(await guardedNeriteOracleAdaptor.paused()).to.equal(true);
+        await guardedLiquityV2OracleAdaptor.connect(admin).pause();
+        expect(await guardedLiquityV2OracleAdaptor.paused()).to.equal(true);
         
         // Unpause
-        await expect(guardedNeriteOracleAdaptor.connect(admin).unpause())
-          .to.emit(guardedNeriteOracleAdaptor, "Unpaused");
+        await expect(guardedLiquityV2OracleAdaptor.connect(admin).unpause())
+          .to.emit(guardedLiquityV2OracleAdaptor, "Unpaused");
         
-        expect(await guardedNeriteOracleAdaptor.paused()).to.equal(false);
+        expect(await guardedLiquityV2OracleAdaptor.paused()).to.equal(false);
       });
 
       it("Should revert when non-guardian tries to unpause", async function () {
-        const { guardedNeriteOracleAdaptor, admin, nonGuardian } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { guardedLiquityV2OracleAdaptor, admin, nonGuardian } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         // Pause first
-        await guardedNeriteOracleAdaptor.connect(admin).pause();
+        await guardedLiquityV2OracleAdaptor.connect(admin).pause();
         
-        await expect(guardedNeriteOracleAdaptor.connect(nonGuardian).unpause())
+        await expect(guardedLiquityV2OracleAdaptor.connect(nonGuardian).unpause())
           .to.be.revertedWith("GuardedPausable: Not a guardian");
       });
 
       it("Should revert when trying to unpause already unpaused contract", async function () {
-        const { guardedNeriteOracleAdaptor, admin } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { guardedLiquityV2OracleAdaptor, admin } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
-        await expect(guardedNeriteOracleAdaptor.connect(admin).unpause())
+        await expect(guardedLiquityV2OracleAdaptor.connect(admin).unpause())
           .to.be.revertedWith("GuardedPausable: Already unpaused");
       });
     });
@@ -299,7 +300,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
   describe("Oracle Data Updates", function () {
     describe("updateOracleData", function () {
       it("Should successfully update oracle data with valid consensus data", async function () {
-        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         // Mock ETH/USD price value
         const mockPrice = h.toWei("2000");
@@ -330,7 +331,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       });
 
       it("Should handle multiple oracle data updates with increasing timestamps", async function () {
-        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         const mockPrice1 = h.toWei("2000");
         const mockPrice2 = h.toWei("2100");
@@ -372,7 +373,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       });
 
       it("Should revert when data is too old", async function () {
-        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         const mockValue = abiCoder.encode(["uint256"], [h.toWei("2000")]);
         
@@ -391,7 +392,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       });
 
       it("Should revert when attestation is too old", async function () {
-        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         const mockPrice = h.toWei("2000");
         const mockValue = abiCoder.encode(["uint256"], [mockPrice]);
@@ -411,7 +412,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       });
 
       it("Should revert when timestamp is not monotonically increasing", async function () {
-        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         const mockPrice1 = h.toWei("2000");
         const mockPrice2 = h.toWei("2100");
@@ -447,7 +448,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       });
 
       it("Should successfully handle optimistic oracle data", async function () {
-        const { tellorDataBank, validators, powers, valCheckpoint, threshold } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { tellorDataBank, validators, powers, valCheckpoint, threshold } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         const mockPrice = h.toWei("2000");
         const mockValue = abiCoder.encode(["uint256"], [mockPrice]);
@@ -499,7 +500,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       });
 
       it("Should revert with insufficient power for optimistic data", async function () {
-        const { tellorDataBank, validators, powers, valCheckpoint, threshold } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { tellorDataBank, validators, powers, valCheckpoint, threshold } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         const mockPrice = h.toWei("2000");
         const mockValue = abiCoder.encode(["uint256"], [mockPrice]);
@@ -540,7 +541,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       });
 
       it("Should revert optimistic data when dispute period hasn't passed", async function () {
-        const { tellorDataBank, validators, powers, valCheckpoint, threshold } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { tellorDataBank, validators, powers, valCheckpoint, threshold } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         const mockPrice = h.toWei("2000");
         const mockValue = abiCoder.encode(["uint256"], [mockPrice]);
@@ -582,7 +583,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       });
 
       it("Should revert when more recent optimistic report is available", async function () {
-        const { tellorDataBank, validators, powers, valCheckpoint, threshold } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { tellorDataBank, validators, powers, valCheckpoint, threshold } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         const mockPrice = h.toWei("2000");
         const mockValue = abiCoder.encode(["uint256"], [mockPrice]);
@@ -623,7 +624,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       });
 
       it("Should successfully handle consensus data vs optimistic data", async function () {
-        const { tellorDataBank, guardedNeriteOracleAdaptor, validators, powers, valCheckpoint, threshold } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { tellorDataBank, guardedLiquityV2OracleAdaptor, validators, powers, valCheckpoint, threshold } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         const mockPrice1 = h.toWei("2000");
         const mockPrice2 = h.toWei("2100");
@@ -642,7 +643,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
         await tellorDataBank.updateOracleData(consensusData, currentValidatorSet, consensusSigs);
         expect(await tellorDataBank.getAggregateValueCount(ETH_USD_QUERY_ID)).to.equal(1);
 
-        latestRoundData = await guardedNeriteOracleAdaptor.latestRoundData();
+        latestRoundData = await guardedLiquityV2OracleAdaptor.latestRoundData();
         expect(latestRoundData.roundId).to.equal(1);
         expect(latestRoundData.answer).to.equal(mockPrice1);
         expect(latestRoundData.startedAt).to.equal(0);
@@ -692,7 +693,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
         expect(abiCoder.decode(["uint256"], aggData.value)[0]).to.equal(mockPrice2);
         expect(aggData.power).to.equal(optimisticData.report.aggregatePower);
 
-        latestRoundData = await guardedNeriteOracleAdaptor.latestRoundData();
+        latestRoundData = await guardedLiquityV2OracleAdaptor.latestRoundData();
         expect(latestRoundData.roundId).to.equal(1);
         expect(latestRoundData.answer).to.equal(mockPrice2);
         expect(latestRoundData.startedAt).to.equal(0);
@@ -701,7 +702,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       });
 
       it("Should revert optimistic data when newer consensus data is available", async function () {
-         const { tellorDataBank, validators, powers, valCheckpoint, threshold } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+         const { tellorDataBank, validators, powers, valCheckpoint, threshold } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         const mockValue = abiCoder.encode(["uint256"], [h.toWei("2000")]);
 
@@ -754,7 +755,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
 
     describe("Storing data for multiple query IDs", function () {
       it("Should store data for different query IDs simultaneously", async function () {
-        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         // Mock price values for different assets
         const ethPrice = h.toWei("2000");
@@ -831,7 +832,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       });
 
       it("Should handle multiple updates for the same query ID without affecting others", async function () {
-        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         // Initial prices
         const ethPrice1 = h.toWei("2000");
@@ -896,7 +897,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       });
 
       it("Should maintain independent data arrays for different query IDs", async function () {
-        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        const { tellorDataBank, validators, powers, valCheckpoint } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
         // Store 3 updates for ETH/USD and 2 updates for BTC/USD
         const ethPrices = [h.toWei("2000"), h.toWei("2100"), h.toWei("2200")];
@@ -956,9 +957,9 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
   describe("Data Retrieval Functions", function () {
     beforeEach(async function () {
       // Set up some test data for retrieval tests
-      const { tellorDataBank, guardedNeriteOracleAdaptor, validators, powers, valCheckpoint, admin } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+      const { tellorDataBank, guardedLiquityV2OracleAdaptor, validators, powers, valCheckpoint, admin } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
       this.tellorDataBank = tellorDataBank;
-      this.guardedNeriteOracleAdaptor = guardedNeriteOracleAdaptor;
+      this.guardedLiquityV2OracleAdaptor = guardedLiquityV2OracleAdaptor;
       
       const mockPrice = h.toWei("2000");
       const mockValue = abiCoder.encode(["uint256"], [mockPrice]);
@@ -988,7 +989,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
 
     describe("latestRoundData", function () {
       it("Should return current data when unpaused", async function () {
-        const latestRoundData = await this.guardedNeriteOracleAdaptor.latestRoundData();
+        const latestRoundData = await this.guardedLiquityV2OracleAdaptor.latestRoundData();
         
         expect(latestRoundData.roundId).to.equal(1);
         expect(latestRoundData.answer).to.equal(this.testValue);
@@ -998,14 +999,14 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       });
 
       it("Should revert when paused", async function () {        
-        await this.guardedNeriteOracleAdaptor.connect(this.admin).pause();
+        await this.guardedLiquityV2OracleAdaptor.connect(this.admin).pause();
         
-        await expect(this.guardedNeriteOracleAdaptor.latestRoundData())
+        await expect(this.guardedLiquityV2OracleAdaptor.latestRoundData())
           .to.be.revertedWith("GuardedPausable: Tellor is paused");
       });
 
       it("Should return current data when paused and then unpaused", async function () {
-        const latestRoundDataBeforePause = await this.guardedNeriteOracleAdaptor.latestRoundData();
+        const latestRoundDataBeforePause = await this.guardedLiquityV2OracleAdaptor.latestRoundData();
 
         expect(latestRoundDataBeforePause.roundId).to.equal(1);
         expect(latestRoundDataBeforePause.answer).to.equal(this.testValue);
@@ -1013,14 +1014,14 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
         expect(latestRoundDataBeforePause.updatedAt).to.equal(this.testTimestamp / 1000);
         expect(latestRoundDataBeforePause.answeredInRound).to.equal(0);
 
-        await this.guardedNeriteOracleAdaptor.connect(this.admin).pause();
+        await this.guardedLiquityV2OracleAdaptor.connect(this.admin).pause();
 
-        await expect(this.guardedNeriteOracleAdaptor.latestRoundData())
+        await expect(this.guardedLiquityV2OracleAdaptor.latestRoundData())
           .to.be.revertedWith("GuardedPausable: Tellor is paused");
 
-        await this.guardedNeriteOracleAdaptor.connect(this.admin).unpause();
+        await this.guardedLiquityV2OracleAdaptor.connect(this.admin).unpause();
 
-        const latestRoundDataAfterUnpause = await this.guardedNeriteOracleAdaptor.latestRoundData();
+        const latestRoundDataAfterUnpause = await this.guardedLiquityV2OracleAdaptor.latestRoundData();
 
         expect(latestRoundDataAfterUnpause.roundId).to.equal(1);
         expect(latestRoundDataAfterUnpause.answer).to.equal(this.testValue);
@@ -1030,17 +1031,17 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
       });
 
       it("Should revert when no data is available", async function () {
-        // deploy a new guarded nerite oracle adaptor
-        const { guardedNeriteOracleAdaptor } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+        // deploy a new guarded LiquityV2 oracle adaptor
+        const { guardedLiquityV2OracleAdaptor } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         
-        await expect(guardedNeriteOracleAdaptor.latestRoundData())
-          .to.be.revertedWith("GuardedNeriteOracleAdaptor: No data available");
+        await expect(guardedLiquityV2OracleAdaptor.latestRoundData())
+          .to.be.revertedWith("GuardedLiquityV2OracleAdaptor: No data available");
       });
     });
 
     describe("decimals", function () {
       it("Should return correct decimals", async function () {
-        expect(await this.guardedNeriteOracleAdaptor.decimals()).to.equal(DECIMALS);
+        expect(await this.guardedLiquityV2OracleAdaptor.decimals()).to.equal(DECIMALS);
       });
     });
   });
@@ -1048,9 +1049,9 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
   describe("Integration Tests", function () {
     beforeEach(async function () {
       // Set up some test data for retrieval tests
-      const { tellorDataBank, guardedNeriteOracleAdaptor, validators, powers, valCheckpoint, admin, mockMainnetPriceFeed, threshold } = await loadFixture(deployGuardedNeriteDataFeedFixture);
+      const { tellorDataBank, guardedLiquityV2OracleAdaptor, validators, powers, valCheckpoint, admin, mockMainnetPriceFeed, threshold } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
       this.tellorDataBank = tellorDataBank;
-      this.guardedNeriteOracleAdaptor = guardedNeriteOracleAdaptor;
+      this.guardedLiquityV2OracleAdaptor = guardedLiquityV2OracleAdaptor;
       
       const mockPrice = h.toWei("2000");
       const mockValue = abiCoder.encode(["uint256"], [mockPrice]);
@@ -1080,7 +1081,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
     describe("deployment", function () {
       it("Should set correct variables", async function () {
         const ethUsdOracle = await this.mockMainnetPriceFeed.ethUsdOracle();
-        expect(ethUsdOracle.aggregator).to.equal(this.guardedNeriteOracleAdaptor.target);
+        expect(ethUsdOracle.aggregator).to.equal(this.guardedLiquityV2OracleAdaptor.target);
         expect(ethUsdOracle.stalenessThreshold).to.equal(STALENESS_THRESHOLD);
         expect(ethUsdOracle.decimals).to.equal(DECIMALS);
         expect(await this.mockMainnetPriceFeed.lastGoodPrice()).to.equal(0);
@@ -1100,7 +1101,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
         expect(await this.mockMainnetPriceFeed.lastGoodPrice()).to.equal(this.testValue);
         expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(false);
 
-        await this.guardedNeriteOracleAdaptor.connect(this.admin).pause();
+        await this.guardedLiquityV2OracleAdaptor.connect(this.admin).pause();
         
         await this.mockMainnetPriceFeed.fetchPriceMock();
 
@@ -1248,11 +1249,11 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
         expect(await this.mockMainnetPriceFeed.shutDown()).to.equal(false);
 
         // Pause and verify paused
-        await this.guardedNeriteOracleAdaptor.connect(this.admin).pause();
-        expect(await this.guardedNeriteOracleAdaptor.paused()).to.equal(true);
+        await this.guardedLiquityV2OracleAdaptor.connect(this.admin).pause();
+        expect(await this.guardedLiquityV2OracleAdaptor.paused()).to.equal(true);
         
         // Unpause
-        await this.guardedNeriteOracleAdaptor.connect(this.admin).unpause();
+        await this.guardedLiquityV2OracleAdaptor.connect(this.admin).unpause();
         
         // Add new data
         await time.increase(60);
@@ -1301,7 +1302,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
 
       it("Should handle price with many decimals correctly", async function () {
         // Verify decimals match between contracts
-        expect(await this.guardedNeriteOracleAdaptor.decimals()).to.equal(DECIMALS);
+        expect(await this.guardedLiquityV2OracleAdaptor.decimals()).to.equal(DECIMALS);
         const ethUsdOracle = await this.mockMainnetPriceFeed.ethUsdOracle();
         expect(ethUsdOracle.decimals).to.equal(DECIMALS);
         

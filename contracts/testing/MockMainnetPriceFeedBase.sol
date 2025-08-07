@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "../interfaces/NeriteAggregatorV3Interface.sol";
+import "../interfaces/LiquityV2OracleAggregatorV3Interface.sol";
 
 /**
  @author Tellor Inc.
@@ -21,7 +21,7 @@ contract MockMainnetPriceFeedBase {
     bool public shutDown;
 
     struct Oracle {
-        NeriteAggregatorV3Interface aggregator;
+        LiquityV2OracleAggregatorV3Interface aggregator;
         uint256 stalenessThreshold;
         uint8 decimals;
     }
@@ -42,7 +42,7 @@ contract MockMainnetPriceFeedBase {
 
     constructor(address _ethUsdOracleAddress, uint256 _ethUsdStalenessThreshold) {
         // Store ETH-USD oracle
-        ethUsdOracle.aggregator = NeriteAggregatorV3Interface(_ethUsdOracleAddress);
+        ethUsdOracle.aggregator = LiquityV2OracleAggregatorV3Interface(_ethUsdOracleAddress);
         ethUsdOracle.stalenessThreshold = _ethUsdStalenessThreshold;
         ethUsdOracle.decimals = ethUsdOracle.aggregator.decimals();
 
@@ -76,7 +76,7 @@ contract MockMainnetPriceFeedBase {
         return (scaledPrice, oracleIsDown);
     }
 
-    function _getCurrentChainlinkResponse(NeriteAggregatorV3Interface _aggregator)
+    function _getCurrentChainlinkResponse(LiquityV2OracleAggregatorV3Interface _aggregator)
         internal
         view
         returns (ChainlinkResponse memory chainlinkResponse)
