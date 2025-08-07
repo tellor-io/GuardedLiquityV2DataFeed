@@ -2,9 +2,10 @@
 
 # GuardedNeriteDataFeed
 
-GuardedNeriteDataFeed provides Tellor oracle data for Nerite. This repository contains two main contracts:
+GuardedNeriteDataFeed provides Tellor oracle data for Nerite. This repository contains three main contracts:
 
-- **GuardedNeriteDataFeed**: Stores and validates Tellor oracle data with guardian pause controls, and allows for data retrieval via a Chainlink-compatible `latestRoundData()` function. A separate instance of this contract is deployed for each price feed.
+- **TellorDataBank**: Stores and validates Tellor oracle data for multiple query IDs. Handles both consensus and optimistic data from the Tellor layer bridge.
+- **GuardedNeriteOracleAdaptor**: Provides a Chainlink-compatible `latestRoundData()` interface for a specific query ID, with guardian pause controls. A separate instance is deployed for each price feed.
 - **GuardedPausable**: Base contract providing guardian management and pause functionality
 
 ## Install
@@ -41,27 +42,44 @@ networks: {
   },
 ```
 
-### Deploy GuardedNeriteDataFeed
+### Deploy TellorDataBank
 
-Set constructor variables in `ignition/modules/GuardedNeriteDataFeed.js`:
+Set constructor variables in `ignition/modules/TellorDataBank.js`:
 
 ```javascript
 const DATA_BRIDGE_ADDRESS = "0x0000000000000000000000000000000000000000";
+```
+
+Deploy:
+
+```shell
+npx hardhat ignition deploy ignition/modules/TellorDataBank.js --network sepolia --deployment-id sepolia-data-bank
+```
+
+### Deploy GuardedNeriteOracleAdaptor
+
+Set constructor variables in `ignition/modules/GuardedNeriteOracleAdaptor.js`:
+
+```javascript
+const DATA_BANK_ADDRESS = "0x0000000000000000000000000000000000000000";
 const QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000000";
+const DECIMALS = 18;
+const FEED_NAME = "ETH/USD";
 const ADMIN_ADDRESS = "0x0000000000000000000000000000000000000000";
 ```
 
 Deploy:
 
 ```shell
-npx hardhat ignition deploy ignition/modules/GuardedNeriteDataFeed.js --network sepolia --deployment-id sepolia-eth-usd-feed
+npx hardhat ignition deploy ignition/modules/GuardedNeriteOracleAdaptor.js --network sepolia --deployment-id sepolia-eth-usd-adaptor
 ```
 
 ### Verify
 Verify the contracts:
 
 ```shell
-npx hardhat ignition verify sepolia-eth-usd-feed
+npx hardhat ignition verify sepolia-data-bank
+npx hardhat ignition verify sepolia-eth-usd-adaptor
 ```
 
 ## Maintainers <a name="maintainers"> </a>

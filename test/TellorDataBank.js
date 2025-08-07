@@ -7,7 +7,7 @@ const { ethers } = require("hardhat");
 const h = require("./customHelpers.js");
 const TellorDataBridgeArtifact = require("usingtellorlayer/artifacts/contracts/testing/bridge/TellorDataBridge.sol/TellorDataBridge.json");
 
-describe("GuardedNeriteDataFeed", function () {
+describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
   // Test data for ETH/USD price queries
   const abiCoder = new ethers.AbiCoder();
   const ETH_USD_QUERY_DATA_ARGS = abiCoder.encode(["string", "string"], ["eth", "usd"]);
