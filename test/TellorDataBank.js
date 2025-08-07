@@ -387,7 +387,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
         );
         
         await expect(tellorDataBank.updateOracleData(attestData, currentValidatorSet, sigs))
-          .to.be.revertedWith("GuardedNeriteDataFeed: Data too old");
+          .to.be.revertedWith("TellorDataBank: Data too old");
       });
 
       it("Should revert when attestation is too old", async function () {
@@ -407,7 +407,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
         );
         
         await expect(tellorDataBank.updateOracleData(attestData, currentValidatorSet, sigs))
-          .to.be.revertedWith("GuardedNeriteDataFeed: Attestation too old");
+          .to.be.revertedWith("TellorDataBank: Attestation too old");
       });
 
       it("Should revert when timestamp is not monotonically increasing", async function () {
@@ -443,7 +443,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
         
         // This should fail timestamp validation
         await expect(tellorDataBank.updateOracleData(olderAttestData, currentValidatorSet2, sigs2))
-          .to.be.revertedWith("GuardedNeriteDataFeed: Report timestamp must increase");
+          .to.be.revertedWith("TellorDataBank: Report timestamp must increase");
       });
 
       it("Should successfully handle optimistic oracle data", async function () {
@@ -536,7 +536,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
         );
         
         await expect(tellorDataBank.updateOracleData(attestData, currentValidatorSet, sigs))
-          .to.be.revertedWith("GuardedNeriteDataFeed: Insufficient optimistic report power");
+          .to.be.revertedWith("TellorDataBank: Insufficient optimistic report power");
       });
 
       it("Should revert optimistic data when dispute period hasn't passed", async function () {
@@ -578,7 +578,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
         );
         
         await expect(tellorDataBank.updateOracleData(attestData, currentValidatorSet, sigs))
-          .to.be.revertedWith("GuardedNeriteDataFeed: Dispute period not passed");
+          .to.be.revertedWith("TellorDataBank: Dispute period not passed");
       });
 
       it("Should revert when more recent optimistic report is available", async function () {
@@ -619,7 +619,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
         );
         
         await expect(tellorDataBank.updateOracleData(attestData, currentValidatorSet, sigs))
-          .to.be.revertedWith("GuardedNeriteDataFeed: More recent optimistic report available");
+          .to.be.revertedWith("TellorDataBank: More recent optimistic report available");
       });
 
       it("Should successfully handle consensus data vs optimistic data", async function () {
@@ -737,7 +737,7 @@ describe("TellorDataBank and GuardedNeriteOracleAdaptor", function () {
         );
         
         await expect(tellorDataBank.updateOracleData(attestData, currentValidatorSet, sigs))
-          .to.be.revertedWith("GuardedNeriteDataFeed: Newer consensus data available");
+          .to.be.revertedWith("TellorDataBank: Newer consensus data available");
       });
     });
   });
