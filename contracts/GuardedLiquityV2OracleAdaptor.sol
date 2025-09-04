@@ -8,6 +8,10 @@ import {GuardedPausable} from "./GuardedPausable.sol";
 /**
  @author Tellor Inc.
  @title GuardedLiquityV2OracleAdaptor
+ @notice The GuardedLiquityV2OracleAdaptor.sol allows pausing and unpausing of data flow via permissioned addresses. 
+ * Thresholds triggering pauses are externally defined and may change at the team’s discretion. There is no guarantee 
+ * that a pause will occur before any losses are incurred, and pauses or unpauses may themselves result in losses. 
+ * Users accept all risks. The team is not liable for any losses or disruptions resulting from the use of this Adaptor.
  @dev this contract implements LiquityV2OracleAggregatorV3Interface to provide Tellor oracle data from a TellorDataBank.
  * It is guarded by a GuardedPausable contract to allow for pausing and unpausing of oracle reads.
  */
