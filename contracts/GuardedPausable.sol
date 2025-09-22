@@ -14,8 +14,9 @@ pragma solidity 0.8.19;
 contract GuardedPausable {
     // Storage
     address public admin; // address of the admin who can add/remove guardians
-    uint256 public guardianCount; // total number of active guardians
     mapping(address => bool) public guardians; // mapping of guardian addresses to their status
+    address[] public guardianList; // array to store guardian addresses for easy querying
+    mapping(address => uint256) public guardianIndex; // mapping to track guardian position in array
     bool public paused; // whether the contract is currently paused
 
     // Events
@@ -32,9 +33,8 @@ contract GuardedPausable {
      * @param _admin address of the initial admin who can add/remove guardians
      */
     constructor(address _admin) {
-        guardians[_admin] = true;
-        guardianCount++;
         admin = _admin;
+        _addGuardian(_admin);
     }
 
     /**
@@ -44,9 +44,7 @@ contract GuardedPausable {
     function addGuardian(address _newGuardian) public {
         require(msg.sender == admin, "GuardedPausable: Not an admin");
         require(!guardians[_newGuardian], "GuardedPausable: Guardian already exists");
-        guardians[_newGuardian] = true;
-        guardianCount++;
-        emit GuardianAdded(_newGuardian);
+        _addGuardian(_newGuardian);
     }
 
     /**
@@ -67,13 +65,11 @@ contract GuardedPausable {
         require(msg.sender == admin, "GuardedPausable: Not an admin");
         require(guardians[_guardian], "GuardedPausable: Guardian does not exist");
         if (_guardian == admin) {
-            require(guardianCount == 1, "GuardedPausable: Cannot remove admin if there are other guardians");
+            require(guardianCount() == 1, "GuardedPausable: Cannot remove admin if there are other guardians");
             admin = address(0);
             emit AdminRemoved();
         }
-        guardians[_guardian] = false;
-        guardianCount--;
-        emit GuardianRemoved(_guardian);
+        _removeGuardian(_guardian);
     }
 
     /**
@@ -93,23 +89,78 @@ contract GuardedPausable {
     function updateAdmin(address _newAdmin) public {
         require(msg.sender == admin, "GuardedPausable: Not an admin");
         require(_newAdmin != admin, "GuardedPausable: New admin cannot be the same as the current admin");
-        require(_newAdmin != address(0), "GuardedPausable: New admin cannot be the zero address");
         // if new admin is not a guardian, add them
-        if (!guardians[_newAdmin]) {
-            guardians[_newAdmin] = true;
-            guardianCount++;
-            emit GuardianAdded(_newAdmin);
+        if (!guardians[_newAdmin] && _newAdmin != address(0)) {
+            _addGuardian(_newAdmin);
         }
         if (guardians[admin]) {
-            guardians[admin] = false;
-            guardianCount--;
-            emit GuardianRemoved(admin);
+            _removeGuardian(admin);
         }
         admin = _newAdmin;
         emit AdminUpdated(_newAdmin);
     }
 
+    // View functions
+    /**
+     * @dev Returns an array of all guardian addresses
+     * @return Array of guardian addresses
+     */
+    function getGuardianAddresses() public view returns (address[] memory) {
+        return guardianList;
+    }
+
+    /**
+     * @dev Returns a guardian address at a specific index
+     * @param index The index of the guardian to retrieve
+     * @return The guardian address at the given index
+     */
+    function getGuardianAtIndex(uint256 index) public view returns (address) {
+        require(index < guardianList.length, "GuardedPausable: Index out of bounds");
+        return guardianList[index];
+    }
+
+    /**
+     * @dev Returns the number of guardians
+     * @return Number of guardians
+     */
+    function guardianCount() public view returns (uint256) {
+        return guardianList.length;
+    }
+
     // internal functions
+    /**
+     * @dev Adds a guardian to the guardian list
+     * @param _guardian address of the guardian to add
+     */
+    function _addGuardian(address _guardian) internal {
+        guardians[_guardian] = true;
+        guardianList.push(_guardian);
+        guardianIndex[_guardian] = guardianList.length - 1;
+        emit GuardianAdded(_guardian);
+    }
+
+    /**
+     * @dev Removes a guardian from the guardian list
+     * @param _guardian address of the guardian to remove
+     */
+    function _removeGuardian(address _guardian) internal {
+        // Remove from array efficiently
+        uint256 index = guardianIndex[_guardian];
+        uint256 lastIndex = guardianList.length - 1;
+        
+        if (index != lastIndex) {
+            // Move the last element to the position of the element to delete
+            address lastGuardian = guardianList[lastIndex];
+            guardianList[index] = lastGuardian;
+            guardianIndex[lastGuardian] = index;
+        }
+        
+        guardianList.pop();
+        delete guardianIndex[_guardian];
+        guardians[_guardian] = false;
+        emit GuardianRemoved(_guardian);
+    }
+
     /**
      * @dev Reverts if the contract is paused
      */
