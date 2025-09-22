@@ -38,58 +38,28 @@ const SEPOLIA_CONFIG = {
 };
 
 const SAGAEVM_CONFIG = {
-  dataBankAddress: "0x6f250229af8D83c51500f3565b10E93d8907B644", // update with actual saga address
-  adminAddress: "0xC69f43741D379cE93bdaAC9b5135EA3e697df1F8",   // update with actual saga admin
+  dataBankAddress: " ", // update with actual saga address
+  adminAddress: " ",   // update with actual saga admin
   decimals: 18,
   contracts: [
     {
-      projectName: "COLT",
-      feedName: "USDN/USD",
-      queryId: "0xe010d752f28dcd2804004d0b57ab1bdc4eca092895d49160204120af11d15f3e",
-      deploymentId: "sagaevm-projecta-usdnusd"
+      projectName: "ProjectA",
+      feedName: "ETH/USD",
+      queryId: "0x0000000000000000000000000000000000000000000000000000000000000001",
+      deploymentId: "sagaevm-projecta-ethusd"
     },
     {
-      projectName: "COLT",
-      feedName: "SUSDS/USD",
-      queryId: "0x59ae85cec665c779f18255dd4f3d97821e6a122691ee070b9a26888bc2a0e45a", 
-      deploymentId: "sagaevm-projectb-susdsusd"
+      projectName: "ProjectB",
+      feedName: "BTC/USD",
+      queryId: "0x0000000000000000000000000000000000000000000000000000000000000002", 
+      deploymentId: "sagaevm-projectb-btcusd"
     },
     {
-      projectName: "COLT",
-      feedName: "yUSD/USD",
-      queryId: "0x35155b44678db9e9e021c2cf49dd20c31b49e03415325c2beffb5221cf63882d",
-      deploymentId: "sagaevm-projectc-yusdusd"
-    },
-    {
-        projectName: "COLT",
-        feedName: "sUSDe/USD",
-        queryId: "0x03731257e35c49e44b267640126358e5decebdd8f18b5e8f229542ec86e318cf",
-        deploymentId: "sagaevm-colt-susdeusd"
-      },
-      {
-        projectName: "Mustang",
-        feedName: "tBTC/USD",
-        queryId: "0x76b504e33305a63a3b80686c0b7bb99e7697466927ba78e224728e80bfaaa0be", 
-        deploymentId: "sagaevm-mustang-tbtcusd"
-      },
-      {
-        projectName: "Mustang",
-        feedName: "rETH/USD",
-        queryId: "0x0bc2d41117ae8779da7623ee76a109c88b84b9bf4d9b404524df04f7d0ca4ca7",
-        deploymentId: "sagaevm-mustang-rethusd"
-      },
-      {
-        projectName: "Mustang",
-        feedName: "wstETH/USD",
-        queryId: "0x1962cde2f19178fe2bb2229e78a6d386e6406979edc7b9a1966d89d83b3ebf2e",
-        deploymentId: "sagaevm-mustang-wstethusd"
-      },
-      {
-        projectName: "Mustang",
-        feedName: "KING/USD",
-        queryId: "0xd62f132d9d04dde6e223d4366c48b47cd9f90228acdc6fa755dab93266db5176",
-        deploymentId: "sagaevm-mustang-kingusd"
-      }
+      projectName: "ProjectC",
+      feedName: "ETH/USD",
+      queryId: "0x0000000000000000000000000000000000000000000000000000000000000003",
+      deploymentId: "sagaevm-projectc-ethusd"
+    }
     // add more contracts here as needed
   ]
 };
