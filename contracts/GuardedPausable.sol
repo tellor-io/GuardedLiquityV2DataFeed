@@ -13,15 +13,16 @@ pragma solidity 0.8.19;
 */
 contract GuardedPausable {
     // Storage
+    address public admin; // address of the admin who can add/remove guardians
+    uint256 public guardianCount; // total number of active guardians
     mapping(address => bool) public guardians; // mapping of guardian addresses to their status
     bool public paused; // whether the contract is currently paused
-    uint256 public guardianCount; // total number of active guardians
-    address public admin; // address of the admin who can add/remove guardians
 
     // Events
+    event AdminRemoved();
+    event AdminUpdated(address indexed newAdmin);
     event GuardianAdded(address indexed guardian);
     event GuardianRemoved(address indexed guardian);
-    event AdminRemoved();
     event Paused();
     event Unpaused();
 
@@ -49,6 +50,16 @@ contract GuardedPausable {
     }
 
     /**
+     * @dev Allows a guardian to pause the contract, preventing oracle calls
+     */
+    function pause() public {
+        require(guardians[msg.sender], "GuardedPausable: Not a guardian");
+        require(!paused, "GuardedPausable: Already paused");
+        paused = true;
+        emit Paused();
+    }
+
+    /**
      * @dev Allows admin to remove a guardian
      * @param _guardian address of the guardian to remove
      */
@@ -66,16 +77,6 @@ contract GuardedPausable {
     }
 
     /**
-     * @dev Allows a guardian to pause the contract, preventing oracle calls
-     */
-    function pause() public {
-        require(guardians[msg.sender], "GuardedPausable: Not a guardian");
-        require(!paused, "GuardedPausable: Already paused");
-        paused = true;
-        emit Paused();
-    }
-
-    /**
      * @dev Allows a guardian to unpause the contract, resuming oracle calls
      */
     function unpause() public {
@@ -85,6 +86,30 @@ contract GuardedPausable {
         emit Unpaused();
     }
 
+    /**
+     * @dev Allows admin to update the admin address
+     * @param _newAdmin address of the new admin
+     */
+    function updateAdmin(address _newAdmin) public {
+        require(msg.sender == admin, "GuardedPausable: Not an admin");
+        require(_newAdmin != admin, "GuardedPausable: New admin cannot be the same as the current admin");
+        require(_newAdmin != address(0), "GuardedPausable: New admin cannot be the zero address");
+        // if new admin is not a guardian, add them
+        if (!guardians[_newAdmin]) {
+            guardians[_newAdmin] = true;
+            guardianCount++;
+            emit GuardianAdded(_newAdmin);
+        }
+        if (guardians[admin]) {
+            guardians[admin] = false;
+            guardianCount--;
+            emit GuardianRemoved(admin);
+        }
+        admin = _newAdmin;
+        emit AdminUpdated(_newAdmin);
+    }
+
+    // internal functions
     /**
      * @dev Reverts if the contract is paused
      */
