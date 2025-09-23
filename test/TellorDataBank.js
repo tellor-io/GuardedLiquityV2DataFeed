@@ -25,7 +25,7 @@ describe("TellorDataBank and GuardedLiquityV2OracleAdaptor", function () {
 
   // Fixture to deploy contracts for testing
   async function deployGuardedLiquityV2DataFeedFixture() {
-    const [deployer, admin, guardian2, nonGuardian] = await ethers.getSigners();
+    const [deployer, admin, guardian2, guardian3, nonGuardian] = await ethers.getSigners();
     
     // Deploy TellorDataBridge
     const threshold = 66;
@@ -64,6 +64,7 @@ describe("TellorDataBank and GuardedLiquityV2OracleAdaptor", function () {
       deployer,
       admin,
       guardian2,
+      guardian3,
       nonGuardian,
       validators: [val1],
       powers: initialPowers,
@@ -217,6 +218,176 @@ describe("TellorDataBank and GuardedLiquityV2OracleAdaptor", function () {
         expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal("0x0000000000000000000000000000000000000000");
         expect(await guardedLiquityV2OracleAdaptor.guardians(admin)).to.equal(false);
         expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(0);
+      });
+    });
+
+    describe("updateAdmin", function () {
+      it("Should allow admin to update admin", async function () {
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal(admin.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(admin)).to.equal(true);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian2)).to.equal(false);
+        await guardedLiquityV2OracleAdaptor.connect(admin).updateAdmin(guardian2.address);
+        expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal(guardian2.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(admin)).to.equal(false);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian2)).to.equal(true);
+      });
+
+      it("Should revert when non-admin tries to update admin", async function () {
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        await expect(guardedLiquityV2OracleAdaptor.connect(guardian2).updateAdmin(guardian2.address))
+          .to.be.revertedWith("GuardedPausable: Not an admin");
+        expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal(admin.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
+      });
+
+      it("Should revert when new admin is the same as the current admin", async function () {
+        const { guardedLiquityV2OracleAdaptor, admin } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        await expect(guardedLiquityV2OracleAdaptor.connect(admin).updateAdmin(admin.address))
+          .to.be.revertedWith("GuardedPausable: New admin cannot be the same as the current admin");
+        expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal(admin.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
+      });
+
+      it("Should handle when new admin is the zero address", async function () {
+        const { guardedLiquityV2OracleAdaptor, admin } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        await guardedLiquityV2OracleAdaptor.connect(admin).updateAdmin("0x0000000000000000000000000000000000000000");
+        expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal("0x0000000000000000000000000000000000000000");
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(0);
+      });
+
+      it("Should handle new admin who is already a guardian", async function () {
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        // add guardian2
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(2);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian2)).to.equal(true);
+        // update admin to guardian2
+        await guardedLiquityV2OracleAdaptor.connect(admin).updateAdmin(guardian2.address);
+        expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal(guardian2.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian2)).to.equal(true);
+      });
+
+      it("New admin should be able to add and remove guardians", async function () {
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2, guardian3 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
+        // update admin to guardian2
+        await guardedLiquityV2OracleAdaptor.connect(admin).updateAdmin(guardian2.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
+        expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal(guardian2.address);
+        // add guardian3
+        await guardedLiquityV2OracleAdaptor.connect(guardian2).addGuardian(guardian3.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian3)).to.equal(true);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(2);
+        // remove guardian3
+        await guardedLiquityV2OracleAdaptor.connect(guardian2).removeGuardian(guardian3.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian3)).to.equal(false);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
+        // update admin back to original admin
+        await guardedLiquityV2OracleAdaptor.connect(guardian2).updateAdmin(admin.address);
+        expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal(admin.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
+      });
+    });
+
+    describe("Guardian Query Functions", function () {
+      it("Should return correct guardian addresses list", async function () {
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2, guardian3 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        
+        // Initially only admin is a guardian
+        let guardianAddresses = await guardedLiquityV2OracleAdaptor.getGuardianAddresses();
+        expect(guardianAddresses.length).to.equal(1);
+        expect(guardianAddresses[0]).to.equal(admin.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
+        expect(await guardedLiquityV2OracleAdaptor.getGuardianAtIndex(0)).to.equal(admin.address);
+        
+        // Add guardian2
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address);
+        guardianAddresses = await guardedLiquityV2OracleAdaptor.getGuardianAddresses();
+        expect(guardianAddresses.length).to.equal(2);
+        expect(guardianAddresses).to.include(admin.address);
+        expect(guardianAddresses).to.include(guardian2.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(2);
+        
+        // Add guardian3
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian3.address);
+        guardianAddresses = await guardedLiquityV2OracleAdaptor.getGuardianAddresses();
+        expect(guardianAddresses.length).to.equal(3);
+        expect(guardianAddresses).to.include(admin.address);
+        expect(guardianAddresses).to.include(guardian2.address);
+        expect(guardianAddresses).to.include(guardian3.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(3);
+      });
+
+      it("Should handle guardian removal correctly in query functions", async function () {
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2, guardian3 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        
+        // Add multiple guardians
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address);
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian3.address);
+        
+        let guardianAddresses = await guardedLiquityV2OracleAdaptor.getGuardianAddresses();
+        expect(guardianAddresses.length).to.equal(3);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(3);
+        
+        // Remove guardian2
+        await guardedLiquityV2OracleAdaptor.connect(admin).removeGuardian(guardian2.address);
+        guardianAddresses = await guardedLiquityV2OracleAdaptor.getGuardianAddresses();
+        expect(guardianAddresses.length).to.equal(2);
+        expect(guardianAddresses).to.include(admin.address);
+        expect(guardianAddresses).to.include(guardian3.address);
+        expect(guardianAddresses).to.not.include(guardian2.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(2);
+        
+        // Remove guardian3
+        await guardedLiquityV2OracleAdaptor.connect(admin).removeGuardian(guardian3.address);
+        guardianAddresses = await guardedLiquityV2OracleAdaptor.getGuardianAddresses();
+        expect(guardianAddresses.length).to.equal(1);
+        expect(guardianAddresses[0]).to.equal(admin.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
+      });
+
+      it("Should handle getGuardianAtIndex correctly", async function () {
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2, guardian3 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        
+        // Add multiple guardians
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address);
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian3.address);
+        
+        // Test valid indices
+        expect(await guardedLiquityV2OracleAdaptor.getGuardianAtIndex(0)).to.equal(admin.address);
+        expect(await guardedLiquityV2OracleAdaptor.getGuardianAtIndex(1)).to.equal(guardian2.address);
+        expect(await guardedLiquityV2OracleAdaptor.getGuardianAtIndex(2)).to.equal(guardian3.address);
+        
+        // Test invalid index
+        await expect(guardedLiquityV2OracleAdaptor.getGuardianAtIndex(3))
+          .to.be.revertedWith("GuardedPausable: Index out of bounds");
+      });
+
+      it("Should maintain correct guardian list after admin update", async function () {
+        const { guardedLiquityV2OracleAdaptor, admin, guardian2, guardian3 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        
+        // Add guardians
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address);
+        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian3.address);
+        
+        let guardianAddresses = await guardedLiquityV2OracleAdaptor.getGuardianAddresses();
+        expect(guardianAddresses.length).to.equal(3);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(3);
+        
+        // Update admin to guardian2 (who is already a guardian)
+        await guardedLiquityV2OracleAdaptor.connect(admin).updateAdmin(guardian2.address);
+        
+        guardianAddresses = await guardedLiquityV2OracleAdaptor.getGuardianAddresses();
+        expect(guardianAddresses.length).to.equal(2);
+        expect(guardianAddresses).to.include(guardian2.address);
+        expect(guardianAddresses).to.include(guardian3.address);
+        expect(guardianAddresses).to.not.include(admin.address);
+        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(2);
+        expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal(guardian2.address);
       });
     });
   });

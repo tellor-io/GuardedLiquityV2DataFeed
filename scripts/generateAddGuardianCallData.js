@@ -5,8 +5,8 @@ const { ethers } = require("hardhat");
 async function main() {
     // Guardian addresses to add (modify this array with your actual guardian addresses)
     const guardianAddresses = [
-        "0x1234567890123456789012345678901234567890", // Replace with actual guardian address
-        "0x0987654321098765432109876543210987654321", // Replace with actual guardian address
+        " ",
+        " ",
         // Add more addresses as needed
     ];
 
@@ -22,7 +22,7 @@ async function main() {
 
     guardianAddresses.forEach((address, index) => {
         // Validate the address
-        if (!ethers.utils.isAddress(address)) {
+        if (!ethers.isAddress(address)) {
             console.log(`❌ Invalid address at index ${index}: ${address}`);
             return;
         }
