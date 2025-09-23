@@ -10,6 +10,8 @@ const { execSync } = require('child_process');
 // CONFIGURATION - EDIT THIS SECTION
 // ================================
 
+unique_id = "sep23-test1"
+
 const SEPOLIA_CONFIG = {
   dataBankAddress: "0x6f250229af8D83c51500f3565b10E93d8907B644",
   adminAddress: "0xC69f43741D379cE93bdaAC9b5135EA3e697df1F8",
@@ -19,46 +21,46 @@ const SEPOLIA_CONFIG = {
       projectName: "ProjectA",
       feedName: "ETH/USD",
       queryId: "0x0000000000000000000000000000000000000000000000000000000000000001",
-      deploymentId: "sepolia-projecta-ethusd"
+      deploymentId: "sepolia-projecta-ethusd-" + unique_id
     },
     {
       projectName: "ProjectA", 
       feedName: "BTC/USD",
       queryId: "0x0000000000000000000000000000000000000000000000000000000000000002",
-      deploymentId: "sepolia-projecta-btcusd"
+      deploymentId: "sepolia-projecta-btcusd-" + unique_id
     },
     {
       projectName: "ProjectB",
       feedName: "ETH/USD", 
       queryId: "0x0000000000000000000000000000000000000000000000000000000000000003",
-      deploymentId: "sepolia-projectb-ethusd"
+      deploymentId: "sepolia-projectb-ethusd-" + unique_id
     }
     // add more contracts here as needed
   ]
 };
 
 const SAGAEVM_CONFIG = {
-  dataBankAddress: " ", // update with actual saga address
-  adminAddress: " ",   // update with actual saga admin
+  dataBankAddress: "0x6f250229af8D83c51500f3565b10E93d8907B644", // saga data bank address
+  adminAddress: "0xC69f43741D379cE93bdaAC9b5135EA3e697df1F8",   // saga admin address
   decimals: 18,
   contracts: [
     {
       projectName: "ProjectA",
       feedName: "ETH/USD",
       queryId: "0x0000000000000000000000000000000000000000000000000000000000000001",
-      deploymentId: "sagaevm-projecta-ethusd"
+      deploymentId: "sagaevm-projecta-ethusd-" + unique_id
     },
     {
       projectName: "ProjectB",
       feedName: "BTC/USD",
       queryId: "0x0000000000000000000000000000000000000000000000000000000000000002", 
-      deploymentId: "sagaevm-projectb-btcusd"
+      deploymentId: "sagaevm-projectb-btcusd-" + unique_id
     },
     {
       projectName: "ProjectC",
       feedName: "ETH/USD",
       queryId: "0x0000000000000000000000000000000000000000000000000000000000000003",
-      deploymentId: "sagaevm-projectc-ethusd"
+      deploymentId: "sagaevm-projectc-ethusd-" + unique_id
     }
     // add more contracts here as needed
   ]
@@ -154,15 +156,15 @@ Examples:
     
     // Deploy all contracts sequentially
     for (const contract of config.contracts) {
-    //   const deploymentId = await deployContract(network, config, contract);
-      deploymentIds.push(contract.deploymentId);
+      const deploymentId = await deployContract(network, config, contract);
+      deploymentIds.push(deploymentId);
     }
     
     console.log(`\n🎉 All contracts deployed successfully!`);
     console.log(`Deployed contracts: ${deploymentIds.join(', ')}`);
     
     // Wait before verification
-    // await sleep(120);
+    await sleep(120);
     
     console.log(`\n🔍 Starting contract verification...`);
     
