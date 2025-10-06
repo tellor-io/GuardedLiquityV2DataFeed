@@ -5,12 +5,41 @@
 // Example: node scripts/deploy-all-adaptors.js sepolia
 
 const { execSync } = require('child_process');
+const { ethers } = require('hardhat');
+
+// ================================
+// UTILITY FUNCTIONS
+// ================================
+
+const unique_id = "sep23-test2";
+
+function generateQueryId(feedName) {
+  // Parse feedName like "ETH/USD" into asset and currency
+  const [asset, currency] = feedName.toLowerCase().split('/');
+  if (!asset || !currency) {
+    throw new Error(`Invalid feedName format: ${feedName}. Expected format: "ASSET/CURRENCY"`);
+  }
+  
+  // Create the query data following Tellor's SpotPrice format
+  const abiCoder = new ethers.AbiCoder();
+  const queryDataArgs = abiCoder.encode(["string", "string"], [asset, currency]);
+  const queryData = abiCoder.encode(["string", "bytes"], ["SpotPrice", queryDataArgs]);
+  const queryId = ethers.keccak256(queryData);
+  
+  return queryId;
+}
+
+function generateDeploymentId(network, projectName, feedName) {
+  // Convert to lowercase and replace "/" with ""
+  const cleanProjectName = projectName.toLowerCase();
+  const cleanFeedName = feedName.toLowerCase().replace('/', '');
+  
+  return `${network}-${cleanProjectName}-${cleanFeedName}-${unique_id}`;
+}
 
 // ================================
 // CONFIGURATION - EDIT THIS SECTION
 // ================================
-
-unique_id = "sep23-test1"
 
 const SEPOLIA_CONFIG = {
   dataBankAddress: "0x6f250229af8D83c51500f3565b10E93d8907B644",
@@ -19,21 +48,15 @@ const SEPOLIA_CONFIG = {
   contracts: [
     {
       projectName: "ProjectA",
-      feedName: "ETH/USD",
-      queryId: "0x0000000000000000000000000000000000000000000000000000000000000001",
-      deploymentId: "sepolia-projecta-ethusd-" + unique_id
+      feedName: "ETH/USD"
     },
     {
       projectName: "ProjectA", 
-      feedName: "BTC/USD",
-      queryId: "0x0000000000000000000000000000000000000000000000000000000000000002",
-      deploymentId: "sepolia-projecta-btcusd-" + unique_id
+      feedName: "BTC/USD"
     },
     {
       projectName: "ProjectB",
-      feedName: "ETH/USD", 
-      queryId: "0x0000000000000000000000000000000000000000000000000000000000000003",
-      deploymentId: "sepolia-projectb-ethusd-" + unique_id
+      feedName: "ETH/USD"
     }
     // add more contracts here as needed
   ]
@@ -41,26 +64,84 @@ const SEPOLIA_CONFIG = {
 
 const SAGAEVM_CONFIG = {
   dataBankAddress: "0x6f250229af8D83c51500f3565b10E93d8907B644", // saga data bank address
-  adminAddress: "0xC69f43741D379cE93bdaAC9b5135EA3e697df1F8",   // saga admin address
+  adminAddress: "0x028dC5dbD026D2A5eE2AEeCa497F585C69053F09",   // saga admin address
   decimals: 18,
   contracts: [
     {
-      projectName: "ProjectA",
-      feedName: "ETH/USD",
-      queryId: "0x0000000000000000000000000000000000000000000000000000000000000001",
-      deploymentId: "sagaevm-projecta-ethusd-" + unique_id
+      projectName: "AlphaGrowth",
+      feedName: "ATOM/USD"
     },
     {
-      projectName: "ProjectB",
-      feedName: "BTC/USD",
-      queryId: "0x0000000000000000000000000000000000000000000000000000000000000002", 
-      deploymentId: "sagaevm-projectb-btcusd-" + unique_id
+      projectName: "AlphaGrowth",
+      feedName: "BTC/USD"
     },
     {
-      projectName: "ProjectC",
-      feedName: "ETH/USD",
-      queryId: "0x0000000000000000000000000000000000000000000000000000000000000003",
-      deploymentId: "sagaevm-projectc-ethusd-" + unique_id
+      projectName: "AlphaGrowth",
+      feedName: "ETH/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "fBTC/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "KING/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "rETH/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "SAGA/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "stATOM/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "sUSDe/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "sUSDS/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "tBTC/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "USDC/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "USDN/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "USDT/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "wstETH/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "yUSD/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "vyUSD/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "sUSN/USD"
+    },
+    {
+      projectName: "AlphaGrowth",
+      feedName: "sfrxUSD/USD"
     }
     // add more contracts here as needed
   ]
@@ -89,10 +170,17 @@ function sleep(seconds) {
 async function deployContract(network, config, contract) {
   console.log(`\n📦 Deploying ${contract.projectName} ${contract.feedName} adaptor...`);
   
+  // Generate queryId and deploymentId dynamically
+  const queryId = generateQueryId(contract.feedName);
+  const deploymentId = generateDeploymentId(network, contract.projectName, contract.feedName);
+  
+  console.log(`Generated queryId: ${queryId}`);
+  console.log(`Generated deploymentId: ${deploymentId}`);
+  
   const parameters = JSON.stringify({
     "GuardedLiquityV2OracleAdaptorModule": {
       dataBankAddress: config.dataBankAddress,
-      queryId: contract.queryId,
+      queryId: queryId,
       decimals: config.decimals,
       projectName: contract.projectName,
       feedName: contract.feedName,
@@ -100,14 +188,14 @@ async function deployContract(network, config, contract) {
     }
   });
 
-  const command = `npx hardhat ignition deploy ignition/modules/GuardedLiquityV2OracleAdaptor.js --network ${network} --deployment-id ${contract.deploymentId} --parameters '${parameters}'`;
+  const command = `npx hardhat ignition deploy ignition/modules/GuardedLiquityV2OracleAdaptor.js --network ${network} --deployment-id ${deploymentId} --parameters '${parameters}'`;
   
   console.log(`Running: ${command}`);
   
   try {
     execSync(command, { stdio: 'inherit' });
     console.log(`✅ Successfully deployed ${contract.projectName} ${contract.feedName}`);
-    return contract.deploymentId;
+    return deploymentId;
   } catch (error) {
     console.error(`❌ Failed to deploy ${contract.projectName} ${contract.feedName}:`, error.message);
     throw error;
