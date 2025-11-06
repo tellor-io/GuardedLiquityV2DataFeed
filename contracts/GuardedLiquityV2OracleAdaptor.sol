@@ -17,12 +17,15 @@ import {GuardedPausable} from "./GuardedPausable.sol";
  */
 contract GuardedLiquityV2OracleAdaptor is LiquityV2OracleAggregatorV3Interface, GuardedPausable {
     // Storage
-    ITellorDataBank public immutable dataBank; // the Tellor data bank contract to retrieve oracle data from
+    ITellorDataBank public dataBank; // the Tellor data bank contract to retrieve oracle data from
     bytes32 public immutable queryId; // the specific query ID this adapter serves data for
     uint8 public immutable decimals; // the number of decimals for the price data
     string public name; // the name of the price feed
     string public project; // the project or protocol this price feed is for
     uint256 public constant MS_PER_SECOND = 1000; // the number of milliseconds in a second
+
+    // Events
+    event DataBankAddressUpdated(address indexed oldDataBank, address indexed newDataBank);
 
     /**
      * @dev initializes the adapter with a data bank, query ID, decimal precision, name, and admin
@@ -68,5 +71,16 @@ contract GuardedLiquityV2OracleAdaptor is LiquityV2OracleAggregatorV3Interface, 
         require(_price < uint256(type(int256).max), "GuardedLiquityV2OracleAdaptor: Price too large");
         // convert aggregateTimestamp to seconds
         return (1, int256(_price), 0, _aggregateData.aggregateTimestamp / MS_PER_SECOND, 0);
+    }
+
+    /**
+     * @dev allows a guardian to update the data bank address
+     * @param _newDataBank the new data bank address
+     */
+    function updateDataBankAddress(address _newDataBank) external  {
+        _onlyGuardian();
+        address _oldDataBank = address(dataBank);
+        dataBank = ITellorDataBank(_newDataBank);
+        emit DataBankAddressUpdated(_oldDataBank, _newDataBank);
     }
 }

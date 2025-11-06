@@ -162,6 +162,13 @@ contract GuardedPausable {
     }
 
     /**
+     * @dev Reverts if the caller is not a guardian
+     */
+    function _onlyGuardian() internal view {
+        require(guardians[msg.sender], "GuardedPausable: Not a guardian");
+    }
+
+    /**
      * @dev Reverts if the contract is paused
      */
     function _onlyUnpaused() internal view {

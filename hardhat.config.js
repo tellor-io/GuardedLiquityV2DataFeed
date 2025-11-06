@@ -3,7 +3,9 @@ const { vars } = require("hardhat/config");
 
 // Get environment variables with fallbacks to avoid errors during test discovery
 const INFURA_API_KEY = vars.get("INFURA_API_KEY", "");
+const ALCHEMY_API_KEY = vars.get("ALCHEMY_API_KEY", "");
 const PK = vars.get("PK", "0x0000000000000000000000000000000000000000000000000000000000000001");
+const PK_SAGA = vars.get("PK_SAGA", "0x0000000000000000000000000000000000000000000000000000000000000001");
 const ETHERSCAN_API_KEY = vars.get("ETHERSCAN_API_KEY", "");
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -35,12 +37,12 @@ module.exports = {
       allowUnlimitedContractSize: true
     },
     sepolia: {
-      url: INFURA_API_KEY ? `https://sepolia.infura.io/v3/${INFURA_API_KEY}` : "",
+      url: ALCHEMY_API_KEY ? `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}` : "",
       accounts: PK ? [PK] : [],
     },
     sagaevm: {
       url: "https://sagaevm.jsonrpc.sagarpc.io",
-      accounts: [PK],
+      accounts: [PK_SAGA],
       gas: 10000000,
       gasPrice: 5000000000
     }

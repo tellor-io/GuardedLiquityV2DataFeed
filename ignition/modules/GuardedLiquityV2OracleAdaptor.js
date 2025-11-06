@@ -3,12 +3,12 @@
 
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 
-const DATA_BANK_ADDRESS = "0x0000000000000000000000000000000000000000";
-const QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000000";
+const DATA_BANK_ADDRESS = " ";
+const QUERY_ID = " ";
 const DECIMALS = 18;
 const PROJECT_NAME = "ProjectA";
 const FEED_NAME = "ETH/USD";
-const ADMIN_ADDRESS = "0x0000000000000000000000000000000000000000";
+const ADMIN_ADDRESS = " ";
 
 module.exports = buildModule("GuardedLiquityV2OracleAdaptorModule", (m) => {
   const dataBankAddress = m.getParameter("dataBankAddress", DATA_BANK_ADDRESS);

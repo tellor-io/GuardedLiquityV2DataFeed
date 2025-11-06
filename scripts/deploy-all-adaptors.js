@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Simple script to deploy multiple GuardedLiquityV2OracleAdaptor contracts
+// Script for deploying multiple GuardedLiquityV2OracleAdaptor contracts
 // Usage: node scripts/deploy-all-adaptors.js <network>
 // Example: node scripts/deploy-all-adaptors.js sepolia
 
@@ -11,7 +11,7 @@ const { ethers } = require('hardhat');
 // UTILITY FUNCTIONS
 // ================================
 
-const unique_id = "sep23-test2";
+const unique_id = "nov6";
 
 function generateQueryId(feedName) {
   // Parse feedName like "ETH/USD" into asset and currency
@@ -42,21 +42,85 @@ function generateDeploymentId(network, projectName, feedName) {
 // ================================
 
 const SEPOLIA_CONFIG = {
-  dataBankAddress: "0x6f250229af8D83c51500f3565b10E93d8907B644",
-  adminAddress: "0xC69f43741D379cE93bdaAC9b5135EA3e697df1F8",
+  dataBankAddress: "0xF03B401966eF4c32e7Cef769c4BB2833BaC0eb9a",
+  adminAddress: "0xfE2952AD10262C6b466070CA34dBB7fA54b882e3",
   decimals: 18,
   contracts: [
     {
-      projectName: "ProjectA",
-      feedName: "ETH/USD"
+      projectName: "projectA",
+      feedName: "ATOM/USD"
     },
     {
-      projectName: "ProjectA", 
+      projectName: "projectB", 
       feedName: "BTC/USD"
     },
     {
-      projectName: "ProjectB",
+      projectName: "projectA",
       feedName: "ETH/USD"
+    },
+    {
+      projectName: "projectB",
+      feedName: "fBTC/USD"
+    },
+    {
+      projectName: "projectA",
+      feedName: "KING/USD"
+    },
+    {
+      projectName: "projectB",
+      feedName: "rETH/USD"
+    },
+    {
+      projectName: "projectA",
+      feedName: "SAGA/USD"
+    },
+    {
+      projectName: "projectB",
+      feedName: "stATOM/USD"
+    },
+    {
+      projectName: "projectA",
+      feedName: "sUSDe/USD"
+    },
+    {
+      projectName: "projectB",
+      feedName: "sUSDS/USD"
+    },
+    {
+      projectName: "projectA",
+      feedName: "tBTC/USD"
+    },
+    {
+      projectName: "projectB",
+      feedName: "USDC/USD"
+    },
+    {
+      projectName: "projectA",
+      feedName: "USDN/USD"
+    },
+    {
+      projectName: "projectB",
+      feedName: "USDT/USD"
+    },
+    {
+      projectName: "projectA",
+      feedName: "wstETH/USD"
+    },
+    {
+      projectName: "projectB",
+      feedName: "yUSD/USD"
+    },
+    {
+      projectName: "projectA",
+      feedName: "vyUSD/USD"
+    },
+    {
+      projectName: "projectB",
+      feedName: "sUSN/USD"
+    },
+    {
+      projectName: "projectA",
+      feedName: "sfrxUSD/USD"
     }
     // add more contracts here as needed
   ]
@@ -64,88 +128,104 @@ const SEPOLIA_CONFIG = {
 
 const SAGAEVM_CONFIG = {
   dataBankAddress: "0x6f250229af8D83c51500f3565b10E93d8907B644", // saga data bank address
-  adminAddress: "0x028dC5dbD026D2A5eE2AEeCa497F585C69053F09",   // saga admin address
+  adminAddress: "0x0000000000000000000000000000000000000000",   // saga admin address
   decimals: 18,
   contracts: [
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectA",
       feedName: "ATOM/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectB", 
       feedName: "BTC/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectA",
       feedName: "ETH/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectB",
       feedName: "fBTC/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectA",
       feedName: "KING/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectB",
       feedName: "rETH/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectA",
       feedName: "SAGA/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectB",
       feedName: "stATOM/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectA",
       feedName: "sUSDe/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectB",
       feedName: "sUSDS/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectA",
       feedName: "tBTC/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectB",
       feedName: "USDC/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectA",
       feedName: "USDN/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectB",
       feedName: "USDT/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectA",
       feedName: "wstETH/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectB",
       feedName: "yUSD/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectA",
       feedName: "vyUSD/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectB",
       feedName: "sUSN/USD"
     },
     {
-      projectName: "AlphaGrowth",
+      projectName: "projectA",
       feedName: "sfrxUSD/USD"
     }
     // add more contracts here as needed
   ]
 };
+
+const DEFAULT_CONFIG = {
+  dataBankAddress: "0x0000000000000000000000000000000000000000", // data bank address
+  adminAddress: "0x0000000000000000000000000000000000000000",   // admin address
+  decimals: 18,
+  contracts: [
+    {
+      projectName: "projectA",
+      feedName: "BTC/USD"
+    },
+    {
+      projectName: "projectB",
+      feedName: "ETH/USD"
+    }
+  ]
+}
 
 // ================================
 // SCRIPT LOGIC - DON'T EDIT BELOW
@@ -153,12 +233,12 @@ const SAGAEVM_CONFIG = {
 
 function getConfig(network) {
   switch (network) {
-    case 'sepolia':
+    case 'nothingnet':
       return SEPOLIA_CONFIG;
     case 'sagaevm':
       return SAGAEVM_CONFIG;
     default:
-      throw new Error(`Unsupported network: ${network}. Use 'sepolia' or 'sagaevm'`);
+      return DEFAULT_CONFIG;
   }
 }
 
@@ -188,7 +268,7 @@ async function deployContract(network, config, contract) {
     }
   });
 
-  const command = `npx hardhat ignition deploy ignition/modules/GuardedLiquityV2OracleAdaptor.js --network ${network} --deployment-id ${deploymentId} --parameters '${parameters}'`;
+  const command = `echo "y" | npx hardhat ignition deploy ignition/modules/GuardedLiquityV2OracleAdaptor.js --network ${network} --deployment-id ${deploymentId} --parameters '${parameters}'`;
   
   console.log(`Running: ${command}`);
   
