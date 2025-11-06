@@ -294,17 +294,13 @@ describe("TellorDataBank and GuardedLiquityV2OracleAdaptor", function () {
     });
 
     describe("updateDataBankAddress", function () {
-      it("Should allow guardian to change data bank address", async function () {
+      it("Should allow admin to change data bank address", async function () {
         const { guardedLiquityV2OracleAdaptor, tellorDataBank, dataBridge, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         expect(await guardedLiquityV2OracleAdaptor.dataBank()).to.equal(tellorDataBank.target);
-        // add guardian2
-        await guardedLiquityV2OracleAdaptor.connect(admin).addGuardian(guardian2.address);
-        expect(await guardedLiquityV2OracleAdaptor.guardians(guardian2)).to.equal(true);
-        expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(2);
         // deploy new databank
         const TellorDataBank = await ethers.getContractFactory("TellorDataBank");
         const dataBank2 = await TellorDataBank.deploy(dataBridge.target);
-        await guardedLiquityV2OracleAdaptor.connect(guardian2).updateDataBankAddress(dataBank2.target);
+        await guardedLiquityV2OracleAdaptor.connect(admin).updateDataBankAddress(dataBank2.target);
         expect(await guardedLiquityV2OracleAdaptor.dataBank()).to.equal(dataBank2.target);
       });
 
@@ -312,7 +308,7 @@ describe("TellorDataBank and GuardedLiquityV2OracleAdaptor", function () {
         const { guardedLiquityV2OracleAdaptor, guardian3, nonGuardian } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
         const fakeDataBank2 = guardian3.address;
         await expect(guardedLiquityV2OracleAdaptor.connect(nonGuardian).updateDataBankAddress(fakeDataBank2))
-          .to.be.revertedWith("GuardedPausable: Not a guardian");
+          .to.be.revertedWith("GuardedPausable: Not the admin");
       });
 
       it("Should be able to switch back to original data bank", async function () {

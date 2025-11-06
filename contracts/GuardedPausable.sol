@@ -162,10 +162,10 @@ contract GuardedPausable {
     }
 
     /**
-     * @dev Reverts if the caller is not a guardian
+     * @dev Reverts if the caller is not the admin
      */
-    function _onlyGuardian() internal view {
-        require(guardians[msg.sender], "GuardedPausable: Not a guardian");
+    function _onlyAdmin() internal view {
+        require(msg.sender == admin, "GuardedPausable: Not the admin");
     }
 
     /**

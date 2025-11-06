@@ -74,11 +74,11 @@ contract GuardedLiquityV2OracleAdaptor is LiquityV2OracleAggregatorV3Interface, 
     }
 
     /**
-     * @dev allows a guardian to update the data bank address
+     * @dev allows the admin to update the data bank address
      * @param _newDataBank the new data bank address
      */
     function updateDataBankAddress(address _newDataBank) external  {
-        _onlyGuardian();
+        _onlyAdmin();
         address _oldDataBank = address(dataBank);
         dataBank = ITellorDataBank(_newDataBank);
         emit DataBankAddressUpdated(_oldDataBank, _newDataBank);
