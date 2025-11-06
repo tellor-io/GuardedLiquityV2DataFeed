@@ -162,6 +162,13 @@ contract GuardedPausable {
     }
 
     /**
+     * @dev Reverts if the caller is not the admin
+     */
+    function _onlyAdmin() internal view {
+        require(msg.sender == admin, "GuardedPausable: Not the admin");
+    }
+
+    /**
      * @dev Reverts if the contract is paused
      */
     function _onlyUnpaused() internal view {

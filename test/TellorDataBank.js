@@ -97,7 +97,7 @@ describe("TellorDataBank and GuardedLiquityV2OracleAdaptor", function () {
     });
   });
 
-  describe("Guardian Management", function () {
+  describe("Guardian and Data Bank Management", function () {
     describe("addGuardian", function () {
       it("Should allow admin to add new guardians", async function () {
         const { guardedLiquityV2OracleAdaptor, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
@@ -290,6 +290,37 @@ describe("TellorDataBank and GuardedLiquityV2OracleAdaptor", function () {
         await guardedLiquityV2OracleAdaptor.connect(guardian2).updateAdmin(admin.address);
         expect(await guardedLiquityV2OracleAdaptor.admin()).to.equal(admin.address);
         expect(await guardedLiquityV2OracleAdaptor.guardianCount()).to.equal(1);
+      });
+    });
+
+    describe("updateDataBankAddress", function () {
+      it("Should allow admin to change data bank address", async function () {
+        const { guardedLiquityV2OracleAdaptor, tellorDataBank, dataBridge, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        expect(await guardedLiquityV2OracleAdaptor.dataBank()).to.equal(tellorDataBank.target);
+        // deploy new databank
+        const TellorDataBank = await ethers.getContractFactory("TellorDataBank");
+        const dataBank2 = await TellorDataBank.deploy(dataBridge.target);
+        await guardedLiquityV2OracleAdaptor.connect(admin).updateDataBankAddress(dataBank2.target);
+        expect(await guardedLiquityV2OracleAdaptor.dataBank()).to.equal(dataBank2.target);
+      });
+
+      it("Should revert when non-admin tries to update data bank address", async function () {
+        const { guardedLiquityV2OracleAdaptor, guardian3, nonGuardian } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        const fakeDataBank2 = guardian3.address;
+        await expect(guardedLiquityV2OracleAdaptor.connect(nonGuardian).updateDataBankAddress(fakeDataBank2))
+          .to.be.revertedWith("GuardedPausable: Not the admin");
+      });
+
+      it("Should be able to switch back to original data bank", async function () {
+        const { guardedLiquityV2OracleAdaptor, tellorDataBank, dataBridge, admin, guardian2 } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+        expect(await guardedLiquityV2OracleAdaptor.dataBank()).to.equal(tellorDataBank.target);
+        // update data bank address to new address
+        const fakeDataBank2 = guardian2.address;
+        await guardedLiquityV2OracleAdaptor.connect(admin).updateDataBankAddress(fakeDataBank2);
+        expect(await guardedLiquityV2OracleAdaptor.dataBank()).to.equal(fakeDataBank2);
+        // switch back to original data bank
+        await guardedLiquityV2OracleAdaptor.connect(admin).updateDataBankAddress(tellorDataBank.target);
+        expect(await guardedLiquityV2OracleAdaptor.dataBank()).to.equal(tellorDataBank.target);
       });
     });
 
@@ -1128,7 +1159,7 @@ describe("TellorDataBank and GuardedLiquityV2OracleAdaptor", function () {
   describe("Data Retrieval Functions", function () {
     beforeEach(async function () {
       // Set up some test data for retrieval tests
-      const { tellorDataBank, guardedLiquityV2OracleAdaptor, validators, powers, valCheckpoint, admin } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
+      const { tellorDataBank, guardedLiquityV2OracleAdaptor, validators, powers, valCheckpoint, admin, dataBridge } = await loadFixture(deployGuardedLiquityV2DataFeedFixture);
       this.tellorDataBank = tellorDataBank;
       this.guardedLiquityV2OracleAdaptor = guardedLiquityV2OracleAdaptor;
       
@@ -1150,6 +1181,10 @@ describe("TellorDataBank and GuardedLiquityV2OracleAdaptor", function () {
       this.testAttestationTimestamp = attestData.attestationTimestamp;
       this.admin = admin;
       this.testRelayTimestamp = blocky.timestamp;
+      this.validators = validators;
+      this.powers = powers;
+      this.valCheckpoint = valCheckpoint;
+      this.dataBridge = dataBridge;
     });
 
     describe("getAggregateValueCount", function () {
@@ -1207,6 +1242,35 @@ describe("TellorDataBank and GuardedLiquityV2OracleAdaptor", function () {
         
         await expect(guardedLiquityV2OracleAdaptor.latestRoundData())
           .to.be.revertedWith("GuardedLiquityV2OracleAdaptor: No data available");
+      });
+
+      it("Should retrieve data from new data bank after updateDataBankAddress called", async function () {
+        expect(await this.guardedLiquityV2OracleAdaptor.dataBank()).to.equal(this.tellorDataBank.target);
+        // retrieve data from original data bank
+        const originalData = await this.guardedLiquityV2OracleAdaptor.latestRoundData();
+        expect(originalData.answer).to.equal(this.testValue);
+        // deploy new data bank
+        const TellorDataBank = await ethers.getContractFactory("TellorDataBank");
+        const dataBank2 = await TellorDataBank.deploy(this.dataBridge.target);
+        await this.guardedLiquityV2OracleAdaptor.connect(this.admin).updateDataBankAddress(dataBank2.target);
+        expect(await this.guardedLiquityV2OracleAdaptor.dataBank()).to.equal(dataBank2.target);
+        // retrieve data from new data bank should revert
+        await expect(this.guardedLiquityV2OracleAdaptor.latestRoundData()).to.be.revertedWith("GuardedLiquityV2OracleAdaptor: No data available");
+        // relay new data to new data bank
+        const mockPrice2 = h.toWei("3000");
+        const mockValue2 = abiCoder.encode(["uint256"], [mockPrice2]);
+
+        const { attestData, currentValidatorSet, sigs } = await h.prepareOracleData(
+          ETH_USD_QUERY_ID,
+          mockValue2,
+          this.validators,
+          this.powers,
+          this.valCheckpoint
+        );
+        await dataBank2.updateOracleData(attestData, currentValidatorSet, sigs);
+        // retrieve data from new data bank, should now return the new data
+        const newData = await this.guardedLiquityV2OracleAdaptor.latestRoundData();
+        expect(newData.answer).to.equal(mockPrice2);
       });
     });
 

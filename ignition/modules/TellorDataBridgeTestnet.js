@@ -3,7 +3,7 @@
 
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 
-const GUARDIAN_ADDRESS = "0xfE2952AD10262C6b466070CA34dBB7fA54b882e3";
+const GUARDIAN_ADDRESS = " ";
 
 module.exports = buildModule("TellorDataBridgeTestnetModule", (m) => {
   const guardianAddress = m.getParameter("guardianAddress", GUARDIAN_ADDRESS);
